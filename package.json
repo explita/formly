@@ -1,6 +1,6 @@
 {
   "name": "@explita/formly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A lightweight form toolkit for React built with developer ergonomics in mind. Includes a flexible Form component, `useForm`, `useField`, and `useFormContext` hooks for managing form state and validation with ease. Designed to simplify complex forms while remaining unopinionated and extensible.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
