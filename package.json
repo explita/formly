@@ -1,0 +1,53 @@
+{
+  "name": "@explita/formly",
+  "version": "0.1.0",
+  "description": "A lightweight form toolkit for React built with developer ergonomics in mind. Includes a flexible Form component, `useForm`, `useField`, and `useFormContext` hooks for managing form state and validation with ease. Designed to simplify complex forms while remaining unopinionated and extensible.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js"
+    },
+    "./utils": {
+      "default": "./dist/utils/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "form",
+    "formly",
+    "form-builder",
+    "form-context",
+    "form-state",
+    "form-validation",
+    "react-hook",
+    "form-provider",
+    "react-forms",
+    "custom-hooks",
+    "form-component",
+    "react-useForm",
+    "lightweight-forms",
+    "typescript"
+  ],
+  "author": "explita",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^19",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "zod": "^4"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
