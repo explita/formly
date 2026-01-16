@@ -21,6 +21,7 @@ export function useFormInitialization({
   createHandlerContext,
 }: UseFormInitializationProps) {
   const previousDefaultValuesRef = useRef<Record<string, any>>({});
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     const saved = persistKey
@@ -34,12 +35,6 @@ export function useFormInitialization({
       generatePlaceholders,
     });
 
-    // Restore persisted state
-    draftListeners.current.restore?.(merged);
-
-    // Notify readiness
-    onReady?.(merged, createHandlerContext(merged));
-
     const flattenedDefaults = flattenFormValues(defaultValues);
 
     const defaultsUnchanged = shallowEqual(
@@ -50,6 +45,15 @@ export function useFormInitialization({
     if (defaultsUnchanged) return;
 
     previousDefaultValuesRef.current = flattenedDefaults;
+
+    if (!hasInitializedRef.current) {
+      // Restore persisted state
+      draftListeners.current.restore?.(merged);
+
+      // Notify readiness
+      onReady?.(merged, createHandlerContext(merged));
+      hasInitializedRef.current = true;
+    }
 
     // Run computed fields
     if (computed) {

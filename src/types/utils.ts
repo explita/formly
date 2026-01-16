@@ -105,6 +105,10 @@ export type HandlerContext<T> = {
   meta: FormMeta;
 };
 
+type ReadyContext<T> = {
+  meta: FormMeta;
+};
+
 export type FormMeta = {
   get<T = unknown>(key: string): T | undefined;
   set: (key: string, value: unknown, options?: { silent?: boolean }) => void;
@@ -325,20 +329,49 @@ export type SetErrors<T> = (
 ) => void;
 
 export type FormOptions<TSchema extends ZodObject<any> | undefined, TValues> = {
+  /**
+   * The schema to use for validation.
+   */
   schema?: TSchema;
+  /**
+   * The default values of the form.
+   */
   defaultValues?: TValues;
+  /**
+   * The errors of the form.
+   */
   errors?: Partial<Record<Path<SchemaType<TSchema, TValues>>, string>>;
+  /**
+   * The error parser to use for parsing errors.
+   */
   errorParser?: (message: string) => string;
+  /**
+   * The check function to use for checking the form.
+   */
   check?: CheckFn<SchemaType<TSchema, TValues>>;
+  /**
+   * The computed fields of the form.
+   */
   computed?: Record<string, Computed<SchemaType<TSchema, TValues>>>;
+  /**
+   * The submit handler of the form.
+   */
   onSubmit?: (
     values: SchemaType<TSchema, TValues>,
     ctx: HandlerContext<SchemaType<TSchema, TValues>>
   ) => void;
+  /**
+   * Called when the form is ready/mounted.
+   */
   onReady?: (
     values: SchemaType<TSchema, TValues>,
-    ctx: HandlerContext<SchemaType<TSchema, TValues>>
+    ctx: ReadyContext<SchemaType<TSchema, TValues>>
   ) => void;
+  /**
+   * The mode of the form.
+   *
+   * @default "uncontrolled"
+   */
   mode?: "controlled" | "uncontrolled";
   /**
    * The validation trigger.
@@ -350,8 +383,19 @@ export type FormOptions<TSchema extends ZodObject<any> | undefined, TValues> = {
    * Used to register the form so it can be accessed outside the hook.
    */
   id?: string;
+  /**
+   * The key used to persist the form state.
+   * If provided, the form state will be persisted to localStorage and restored on mount.
+   * If id is provided, it will be used as the key.
+   */
   persistKey?: string;
+  /**
+   * Whether to focus the first field with an error on submit.
+   */
   autoFocusOnError?: boolean;
+  /**
+   * Whether to use the saved form state first.
+   */
   savedFormFirst?: boolean;
 };
 
@@ -360,8 +404,6 @@ type CheckFn<T> = (
   ctx: {
     multiPathError: (paths: Path<T>[], message: string) => void;
     focus: (name: Path<T>) => void;
-    // setErrors: SetErrors<T>;
-    // mapErrors: MapErrors;
   }
 ) =>
   | Promise<Partial<Record<Path<T>, string>> | void>

@@ -47,6 +47,7 @@ import { Field } from "../components";
 import { createFormBus } from "../lib/pub-sub";
 import { registry } from "../lib/form-registry";
 import { useFormInitialization } from "./use-form-initialization";
+import { createMetaContext } from "../lib/meta-context";
 
 export function useForm<
   TSchema extends z.ZodObject<any> | undefined = undefined,
@@ -1168,30 +1169,7 @@ export function useForm<
     };
   }, []);
 
-  const formMetadata = {
-    get<T = unknown>(key: string): T | undefined {
-      return metaRef.current.get(key) as T | undefined;
-    },
-    set(key: string, value: unknown, opts?: { silent?: boolean }) {
-      metaRef.current.set(key, value);
-      if (!opts?.silent) triggerRerender();
-    },
-    delete(key: string) {
-      metaRef.current.delete(key);
-    },
-    has(key: string) {
-      return metaRef.current.has(key);
-    },
-    keys() {
-      return metaRef.current.keys();
-    },
-    values() {
-      return metaRef.current.values();
-    },
-    clear() {
-      metaRef.current.clear();
-    },
-  };
+  const formMetadata = createMetaContext(metaRef, triggerRerender);
 
   //initialize form
   // Intentionally depends only on defaultValues.
