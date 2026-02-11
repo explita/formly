@@ -18,6 +18,7 @@ import {
   ComputedField,
   FieldRegistrationOptions,
   ConditionalConfig,
+  InferComputed,
 } from "../types/utils";
 import {
   debounce,
@@ -53,11 +54,13 @@ export function useForm<
   TSchema extends z.ZodObject<any> | undefined = undefined,
   TDefault = TSchema extends z.ZodObject<any>
     ? z.infer<TSchema>
-    : Record<string, any>
+    : Record<string, any>,
+  TComputed extends Record<string, any> = {},
 >(
-  options?: FormValues<TSchema, TDefault>
+  options?: FormValues<TSchema, TDefault, TComputed>,
 ): FormInstance<
-  TSchema extends z.ZodObject<any> ? z.infer<TSchema> : TDefault
+  (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : TDefault) &
+    InferComputed<TComputed>
 > {
   const {
     schema,
@@ -105,16 +108,16 @@ export function useForm<
   // subscribers
   const globalSubscribers = useRef<Set<(values: any) => void>>(new Set());
   const fieldSubscribersRef = useRef<Record<string, Set<(value: any) => void>>>(
-    {}
+    {},
   );
   const fieldRegistryRef = useRef<
     Record<string, FieldRegistrationOptions<any, any>>
   >({});
   const fieldsTransformsRef = useRef<Map<string, ((val: any) => any)[]>>(
-    new Map()
+    new Map(),
   );
   const fieldsValidationsRef = useRef<Map<string, (val: any) => any>>(
-    new Map()
+    new Map(),
   );
 
   const metaRef = useRef<Map<string, unknown>>(new Map());
@@ -133,7 +136,7 @@ export function useForm<
   const touchedFieldsRef = useRef<Record<string, boolean>>({});
 
   const currentSchema = useRef<z.ZodObject<any> | undefined>(
-    schema && isZodSchema(schema) ? schema : undefined
+    schema && isZodSchema(schema) ? schema : undefined,
   );
 
   //conditionals
@@ -190,7 +193,7 @@ export function useForm<
     const flattenedErrors = flattenFormValues(errors);
     const errorsUnchanged = shallowEqual(
       previousErrorsRef.current,
-      flattenedErrors
+      flattenedErrors,
     );
 
     if (errorsUnchanged) return;
@@ -220,13 +223,13 @@ export function useForm<
       if (channel === "immediate") {
         return writeDraftImmediate(
           persistKey,
-          nestFormValues(formValues.current)
+          nestFormValues(formValues.current),
         );
       }
 
       return writeDraft(persistKey, nestFormValues(formValues.current));
     },
-    [persistKey]
+    [persistKey],
   );
 
   const setSchema = useCallback((newSchema?: z.ZodObject<any>) => {
@@ -278,7 +281,7 @@ export function useForm<
         }
       }
     },
-    [mode, writeDraftDebounced]
+    [mode, writeDraftDebounced],
   );
 
   const setValues = useCallback(
@@ -287,7 +290,7 @@ export function useForm<
       options?: {
         overwrite?: boolean;
       },
-      skipWriteDraft = false
+      skipWriteDraft = false,
     ) => {
       // Flatten incoming values for consistent key access
       const flattened = flattenFormValues(values);
@@ -312,17 +315,17 @@ export function useForm<
         writeDraftDebounced();
       }
     },
-    [writeDraftDebounced, triggerRerender]
+    [writeDraftDebounced, triggerRerender],
   );
 
   const getValue = useCallback(
     (name: string) => getValueByPath(getValues(), name),
-    []
+    [],
   );
 
   const getValues = useCallback(
     () => nestFormValues(formValues.current) as TDefault,
-    []
+    [],
   );
 
   const setFieldError = useCallback(
@@ -337,7 +340,7 @@ export function useForm<
       // notify only the affected field
       fieldErrorSubscribersRef.current[name]?.forEach((fn) => fn(error));
     },
-    []
+    [],
   );
 
   const setErrors = useCallback(
@@ -357,13 +360,13 @@ export function useForm<
         setFieldError(key, mapped[key]);
       });
     },
-    [setFieldError]
+    [setFieldError],
   );
 
   const getError = useCallback(
     (name: keyof TDefault) =>
       getValueByPath(formErrors.current, name as string),
-    []
+    [],
   );
 
   const getErrors = useCallback(() => formErrors.current, []);
@@ -372,10 +375,13 @@ export function useForm<
     if (!formErrors.current || Object.keys(formErrors.current).length === 0)
       return;
     setErrors(
-      Object.keys(formErrors.current).reduce((acc, key) => {
-        acc[key] = undefined;
-        return acc;
-      }, {} as Record<string, undefined>)
+      Object.keys(formErrors.current).reduce(
+        (acc, key) => {
+          acc[key] = undefined;
+          return acc;
+        },
+        {} as Record<string, undefined>,
+      ),
     );
   }
 
@@ -396,7 +402,7 @@ export function useForm<
         setFieldError(name, undefined);
       }
     }, 150),
-    [currentSchema, mode, setFieldError]
+    [currentSchema, mode, setFieldError],
   );
 
   async function formValidation() {
@@ -405,7 +411,7 @@ export function useForm<
 
     const result = await validateForm(
       currentSchema.current,
-      formValues.current as Record<string, unknown>
+      formValues.current as Record<string, unknown>,
     );
 
     if (result.success) {
@@ -495,10 +501,10 @@ export function useForm<
     <P extends Path<TDefault>>(
       name: P,
       options?: FieldRegistrationOptions<TDefault, P>,
-      internal?: boolean
+      internal?: boolean,
     ) => {
       const [error, setError] = useState<string | undefined>(
-        formErrors.current[name]
+        formErrors.current[name],
       );
       // internal value ref
       const valueRef = useRef(getValue(name));
@@ -573,7 +579,7 @@ export function useForm<
             validateField(name);
           }
         },
-        [name]
+        [name],
       );
 
       const onBlur = useCallback(() => {
@@ -593,7 +599,7 @@ export function useForm<
         "aria-invalid": !!error,
       };
     },
-    []
+    [],
   );
 
   const focus = useCallback((name: string) => {
@@ -635,10 +641,10 @@ export function useForm<
 
       // 1️⃣ Notify all relevant field subscribers
       for (const [subPath, subscribers] of Object.entries(
-        fieldSubscribersRef.current
+        fieldSubscribersRef.current,
       )) {
         const shouldNotify = fields.some(
-          (path) => path === subPath || path.startsWith(`${subPath}.`)
+          (path) => path === subPath || path.startsWith(`${subPath}.`),
         );
         if (shouldNotify) {
           const value = getValue(subPath as Path<TDefault>) || "";
@@ -661,7 +667,7 @@ export function useForm<
     (
       nameOrCallback: string | string[] | Subscriber<any>,
       callback?: Subscriber<any>,
-      opts?: { internalRef?: string }
+      opts?: { internalRef?: string },
     ) => {
       // --- GLOBAL SUBSCRIPTION ---
       if (typeof nameOrCallback === "function") {
@@ -718,13 +724,13 @@ export function useForm<
         }
       };
     },
-    []
+    [],
   );
 
   async function safeCompute(
     name: string,
     fn: (values: TDefault, index: number) => any,
-    index?: number
+    index?: number,
   ) {
     if (computing.current.has(name)) return; // avoid infinite loops
     computing.current.add(name);
@@ -755,7 +761,7 @@ export function useForm<
       name: string,
       depsOrFn: string[] | ((values: any, index: number) => any),
       maybeFn?: (values: any, index: number) => any,
-      index?: number
+      index?: number,
     ) => {
       const deps = Array.isArray(depsOrFn) ? depsOrFn : null;
       const fn = Array.isArray(depsOrFn) ? maybeFn! : depsOrFn;
@@ -781,13 +787,13 @@ export function useForm<
       // Subscribe to form changes
       if (deps && deps.length > 0) {
         deps.forEach((dep) => {
-          subscribe(dep as any, () => void safeCompute(name, fn, index));
+          subscribe(dep, () => void safeCompute(name, fn, index));
         });
       } else {
         subscribe(() => void safeCompute(name, fn, index));
       }
     },
-    []
+    [],
   );
 
   const transform = useCallback(
@@ -800,7 +806,7 @@ export function useForm<
       //@ts-ignore
       setValue(path, fn(getValue(path)));
     },
-    []
+    [],
   );
 
   function applyTransformations(path: string, value: any) {
@@ -836,7 +842,7 @@ export function useForm<
         // console.warn("conditional when() threw for rule", rule, err);
       }
 
-      const effects = result ? config.then ?? {} : config.else ?? {};
+      const effects = result ? (config.then ?? {}) : (config.else ?? {});
 
       for (const field of fields) {
         // apply visibility
@@ -888,7 +894,7 @@ export function useForm<
         evaluateConditionals();
       };
     },
-    []
+    [],
   );
 
   function subscribeVisibility(name: string, cb: () => void) {
@@ -917,8 +923,8 @@ export function useForm<
     const fieldsToWatch = !fields
       ? Object.keys(formValues.current) // Watch all fields
       : Array.isArray(fields)
-      ? fields
-      : [fields];
+        ? fields
+        : [fields];
 
     if (!fields) watchedFieldsRef.current.clear();
 
@@ -940,7 +946,9 @@ export function useForm<
       // Return both array and object types
       return Object.assign(
         result,
-        Object.fromEntries(fields.map((field, index) => [field, result[index]]))
+        Object.fromEntries(
+          fields.map((field, index) => [field, result[index]]),
+        ),
       );
     }
 
@@ -966,7 +974,7 @@ export function useForm<
         }
       };
     },
-    []
+    [],
   );
 
   const unsubscribeField = useCallback(
@@ -984,7 +992,7 @@ export function useForm<
       delete formErrors.current[name];
       fieldsValidationsRef.current.delete(name);
     },
-    []
+    [],
   );
 
   const unsubscribeFieldPrefix = useCallback(
@@ -997,16 +1005,16 @@ export function useForm<
         }
       }
     },
-    [unsubscribeField]
+    [unsubscribeField],
   );
 
   const reset = useCallback(() => {
     Object.keys(fieldSubscribersRef.current).forEach((name) =>
-      fieldSubscribersRef.current[name]?.forEach((cb) => cb(""))
+      fieldSubscribersRef.current[name]?.forEach((cb) => cb("")),
     );
 
     Object.keys(fieldErrorSubscribersRef.current).forEach((name) =>
-      fieldErrorSubscribersRef.current[name]?.forEach((fn) => fn(undefined))
+      fieldErrorSubscribersRef.current[name]?.forEach((fn) => fn(undefined)),
     );
 
     dirtyFieldsRef.current = {};
@@ -1014,7 +1022,7 @@ export function useForm<
     setValues(
       { ...generatePlaceholders, ...defaultValues },
       { overwrite: true },
-      true
+      true,
     );
 
     channelBus.channel("value:*").emit({});
@@ -1065,7 +1073,7 @@ export function useForm<
 
   const handleSubmit = useCallback(
     (
-      onValid: (data: any, ctx: HandlerContext<any>) => void | Promise<void>
+      onValid: (data: any, ctx: HandlerContext<any>) => void | Promise<void>,
     ) => {
       return async (event?: React.FormEvent) => {
         if (event) event.preventDefault();
@@ -1085,7 +1093,7 @@ export function useForm<
         }
       };
     },
-    []
+    [],
   );
 
   const field = useCallback(<P extends Path<TDefault>>(path: P) => {

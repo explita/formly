@@ -1,26 +1,33 @@
 import type { z, ZodObject } from "zod";
-import { Path, PathValue } from "./path";
-import { ArrayHelpers, ArrayItem, HandlerArrayHelpers } from "./array";
-import { GroupHelpers } from "./group";
-import { FieldHelpers } from "./field";
+import { Path, PathValue } from "./path.js";
+import { ArrayHelpers, ArrayItem, HandlerArrayHelpers } from "./array.js";
+import { GroupHelpers } from "./group.js";
+import { FieldHelpers } from "./field.js";
 import { Field } from "../components";
-import { createFormBus } from "../lib/pub-sub";
+import { createFormBus } from "../lib/pub-sub.js";
+import { ReactElement } from "react";
 
 export type FormShape<F> = F extends FormInstance<infer T> ? T : never;
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};
 
 export type FormValues<
   TSchema extends z.ZodObject | undefined = undefined,
   DefaultValues = TSchema extends undefined
     ? Record<string, any>
-    : Partial<z.infer<TSchema>>
-> = TSchema extends z.ZodObject<any>
-  ? FormOptions<TSchema, Partial<z.infer<TSchema>>>
-  : FormOptions<TSchema, DefaultValues>;
+    : Partial<z.infer<TSchema>>,
+  TComputed extends Record<string, any> = {},
+> = FormOptions<TSchema, DefaultValues, TComputed>;
 
-export type SchemaType<TSchema, TValues> = TSchema extends ZodObject<any>
-  ? z.infer<TSchema>
-  : TValues;
+export type SchemaType<TSchema, TValues> =
+  TSchema extends ZodObject<any> ? z.infer<TSchema> : TValues;
 
+export type InferComputed<T> = Prettify<{
+  [K in keyof T]: T[K] extends { fn: (...args: any[]) => infer R }
+    ? R
+    : unknown;
+}>;
 export type InputValue = string | undefined;
 
 export type InputEvent = React.FormEvent<
@@ -60,16 +67,12 @@ export type FieldRegistrationOptions<T, P extends Path<T>> = {
     | ((val: PathValue<T, P>) => unknown)
     | ((val: PathValue<T, P>) => unknown)[];
   validate?: (value: PathValue<T, P>) => string | undefined;
-  // compute?: {
-  //   deps: Path<T>[];
-  //   fn: (values: T, index: number) => unknown;
-  // };
 };
 
 export type FieldProps<T, P extends Path<T> = Path<T>> = {
   id?: string;
   name: P;
-  label?: string;
+  label?: string | ReactElement;
   as?: "checkbox" | "select" | "date";
   required?: boolean;
   hideError?: boolean;
@@ -82,13 +85,12 @@ export type FieldProps<T, P extends Path<T> = Path<T>> = {
     | ((val: PathValue<T, P>) => unknown)
     | ((val: PathValue<T, P>) => unknown)[];
   validate?: (value: PathValue<T, P>) => string | undefined;
-  // compute?: FieldRegistrationOptions<T, P>["compute"];
   defaultValue?: PathValue<T, P>;
 };
 
 export type FieldContextType = {
   name?: string;
-  label?: string;
+  label?: string | ReactElement;
   id?: string;
   message?: string;
   required?: boolean;
@@ -212,7 +214,7 @@ export type FormInstance<T> = {
    * @returns A function that can be used as a form's `onSubmit` handler.
    */
   handleSubmit: (
-    onValid: (data: T, ctx: HandlerContext<T>) => void | Promise<void>
+    onValid: (data: T, ctx: HandlerContext<T>) => void | Promise<void>,
   ) => (event: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
   /**
    * A utility function to register a form field.
@@ -222,7 +224,7 @@ export type FormInstance<T> = {
    */
   register: <P extends Path<T>>(
     name: P,
-    options?: FieldRegistrationOptions<T, P>
+    options?: FieldRegistrationOptions<T, P>,
   ) => FieldRegistration;
   /**
    * A utility function to access and modify a specific form field.
@@ -274,7 +276,7 @@ export type FormInstance<T> = {
    */
   subscribe: <P extends Path<T> | undefined = undefined>(
     nameOrCallback: P | P[] | Subscriber<T, P>,
-    callback?: Subscriber<T, P>
+    callback?: Subscriber<T, P>,
     // internalRef?: string
   ) => () => void;
   /**
@@ -285,7 +287,7 @@ export type FormInstance<T> = {
    */
   transform: <P extends Path<T>>(
     name: P,
-    fn: (val: PathValue<T, P>) => unknown
+    fn: (val: PathValue<T, P>) => unknown,
   ) => void;
   /**
    * A utility function to conditionally show or hide a form field.
@@ -321,14 +323,18 @@ export type FormInstance<T> = {
 
 export type SetValues<T> = (
   values: Partial<T>,
-  options?: { overwrite?: boolean }
+  options?: { overwrite?: boolean },
 ) => void;
 
 export type SetErrors<T> = (
-  errors?: Partial<Record<Path<T>, string>> | z.ZodError["issues"]
+  errors?: Partial<Record<Path<T>, string>> | z.ZodError["issues"],
 ) => void;
 
-export type FormOptions<TSchema extends ZodObject<any> | undefined, TValues> = {
+export type FormOptions<
+  TSchema extends ZodObject<any> | undefined,
+  TValues,
+  TComputed extends Record<string, any> = {},
+> = {
   /**
    * The schema to use for validation.
    */
@@ -352,20 +358,27 @@ export type FormOptions<TSchema extends ZodObject<any> | undefined, TValues> = {
   /**
    * The computed fields of the form.
    */
-  computed?: Record<string, Computed<SchemaType<TSchema, TValues>>>;
+  computed?: {
+    [K in keyof TComputed]: {
+      deps?: Path<SchemaType<TSchema, TValues>>[];
+      fn: (values: SchemaType<TSchema, TValues>, index: number) => unknown;
+    };
+  } & TComputed;
   /**
    * The submit handler of the form.
    */
   onSubmit?: (
-    values: SchemaType<TSchema, TValues>,
-    ctx: HandlerContext<SchemaType<TSchema, TValues>>
+    values: SchemaType<TSchema, TValues> & InferComputed<TComputed>,
+    ctx: HandlerContext<
+      SchemaType<TSchema, TValues> & InferComputed<TComputed>
+    >,
   ) => void;
   /**
    * Called when the form is ready/mounted.
    */
   onReady?: (
-    values: SchemaType<TSchema, TValues>,
-    ctx: ReadyContext<SchemaType<TSchema, TValues>>
+    values: SchemaType<TSchema, TValues> & InferComputed<TComputed>,
+    ctx: ReadyContext<SchemaType<TSchema, TValues> & InferComputed<TComputed>>,
   ) => void;
   /**
    * The mode of the form.
@@ -404,7 +417,7 @@ type CheckFn<T> = (
   ctx: {
     multiPathError: (paths: Path<T>[], message: string) => void;
     focus: (name: Path<T>) => void;
-  }
+  },
 ) =>
   | Promise<Partial<Record<Path<T>, string>> | void>
   | Partial<Record<Path<T>, string>>
@@ -412,36 +425,31 @@ type CheckFn<T> = (
 
 type MapErrors = <E extends Record<string, any>>(
   errObj: E,
-  path?: string
+  path?: string,
 ) => void;
 
 export type Compute<T> = <P extends Path<T>>(
   name: string,
   depsOrFn: P[] | ((values: T, index: number) => any),
-  maybeFn?: (values: T, index: number) => any
+  maybeFn?: (values: T, index: number) => any,
 ) => void;
 
-export type ComputedField<T> = {
+export type ComputedField<T, R = unknown> = {
   deps?: Path<T>[];
-  fn: (values: T, index: number) => any;
+  fn: (values: T, index: number) => R;
 };
 
-type ComputedTemplate<T> = {
-  deps: Path<T>[]; // dependencies relative to the array item
-  fn: (values: T, index: number) => any;
-};
-
-export type Computed<T> = ComputedField<T>; // | ComputedTemplate<T>;
+export type Computed<T> = ComputedField<T>;
 
 export type Subscriber<T, P extends Path<T> | undefined = undefined> = (
-  value: P extends undefined ? T : PathValue<T, P>
+  value: P extends undefined ? T : PathValue<T, P>,
 ) => void;
 
 type WatchFn<T> = {
   (): T; // No args → returns full form
-  <P extends Path<T>>(fields: P[]): { [K in P]: PathValue<T, K> } & Array<
-    PathValue<T, P[number]>
-  >; // Array of fields or object
+  <P extends Path<T>>(
+    fields: P[],
+  ): { [K in P]: PathValue<T, K> } & Array<PathValue<T, P[number]>>; // Array of fields or object
   <P extends Path<T>>(field: P): PathValue<T, P>; // Single field
 };
 
@@ -482,7 +490,7 @@ export type UseFormInitializationProps = {
   setValues: (
     values: Record<string, any>,
     options?: { overwrite?: boolean },
-    silent?: boolean
+    silent?: boolean,
   ) => void;
 
   createHandlerContext: (values: Record<string, any>) => any;

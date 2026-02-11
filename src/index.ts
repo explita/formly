@@ -1,9 +1,8 @@
-export { Form } from "./providers/form";
-export * from "./components";
-export * from "./hooks/use-form";
-export * from "./hooks/use-field";
-export * from "./hooks/use-form-context";
-export * from "./hooks/use-form-by-id";
-export * from "./utils";
-export type { HandlerContext, FormShape, FormInstance } from "./types/utils";
-export type * from "./types/array";
+export { Form } from "./providers/form.js";
+export * from "./components/index.js";
+export * from "./hooks/use-form.js";
+export * from "./hooks/use-field.js";
+export * from "./hooks/use-form-context.js";
+export * from "./hooks/use-form-by-id.js";
+export type { HandlerContext, FormShape, FormInstance } from "./types/utils.js";
+export type * from "./types/array.js";
