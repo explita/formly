@@ -1,6 +1,8 @@
 import React, { createContext, JSX, use } from "react";
-import { FieldError, Label, useField } from "../";
-import { FieldContextType, FieldProps } from "../types/utils";
+import { FieldError, Label } from "./index.js";
+import { useField } from "../hooks/use-field.js";
+import type { FieldContextType, FieldProps } from "../types/utils.js";
+import type { Path } from "../types/path.js";
 
 const FieldContext = createContext<FieldContextType | null>(null);
 
@@ -21,7 +23,7 @@ export function useFieldContext(): FieldContextType {
   return fieldContext;
 }
 
-export function Field<T>({
+export function Field<T extends Record<string, any>, P extends Path<T>>({
   name,
   id,
   label,
@@ -32,9 +34,9 @@ export function Field<T>({
   children,
   render,
   ...rest
-}: FieldProps<T>): JSX.Element {
+}: FieldProps<T, P>): JSX.Element {
   //@ts-ignore
-  const field = useField(name, { ...rest });
+  const field = useField<T, P>(name, { ...rest });
 
   // Pick whichever function/render prop is provided
   const renderFn = children || render;
@@ -80,10 +82,10 @@ export function Field<T>({
             //@ts-ignore
             checked: !!value,
             onCheckedChange: (val: boolean) => {
-              setValue(val);
+              setValue(val as any);
             },
           },
-          meta
+          meta,
         )}
       </FieldContext>
     );
@@ -103,11 +105,11 @@ export function Field<T>({
               ...bind,
               //@ts-ignore
               onValueChange: (val: string) => {
-                setValue(val);
+                setValue(val as any);
               },
               "data-input-error": hasError,
             },
-            meta
+            meta,
           )}
           {hasError && <FieldError />}
         </div>
@@ -128,7 +130,7 @@ export function Field<T>({
             ...bind,
             "data-input-error": hasError,
           },
-          meta
+          meta,
         )}
         {hasError && <FieldError />}
       </div>

@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import { nestFormValues } from "./utils";
-import { mapZodErrors } from "./zod-helpers";
+import { nestFormValues } from "./utils.js";
+import { mapZodErrors } from "./zod-helpers.js";
 
 type ValidationResponse<T> =
   | {
@@ -26,17 +26,17 @@ type ValidationResponse<T> =
  */
 export async function validateForm<Schema extends z.ZodObject>(
   validationSchema: Schema,
-  formData: FormData | Record<string, unknown> | undefined
+  formData: FormData | Record<string, unknown> | undefined,
 ): Promise<ValidationResponse<z.infer<Schema>>> {
   if (typeof validationSchema?.safeParseAsync !== "function") {
     throw new Error(
-      "A valid Zod schema is required for form validation. Please provide a valid Zod schema and try again."
+      "A valid Zod schema is required for form validation. Please provide a valid Zod schema and try again.",
     );
   }
 
   if (!formData) {
     throw new Error(
-      "A valid FormData object is required for form validation. Please provide a valid FormData object and try again."
+      "A valid FormData object is required for form validation. Please provide a valid FormData object and try again.",
     );
   }
 
@@ -70,7 +70,7 @@ export async function validateForm<Schema extends z.ZodObject>(
     throw new Error(
       `Validation failed due to an unexpected error: ${
         error.message || "Please make sure Zod is installed and try again."
-      }`
+      }`,
     );
   }
 }

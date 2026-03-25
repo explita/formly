@@ -1,4 +1,4 @@
-import { ChannelEvent } from "../types/pub-sub";
+import { ChannelEvent } from "../types/pub-sub.js";
 
 export type Callback<T> = (payload: T) => void;
 

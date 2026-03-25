@@ -1,4 +1,4 @@
-import { debounce } from "./debounce";
+import { debounce } from "./debounce.js";
 
 function getDrafts(): Record<string, unknown> {
   const stored = localStorage.getItem("drafts");
@@ -29,7 +29,7 @@ function setDrafts(drafts: Record<string, unknown>): void {
  */
 export function writeDraftImmediate<T extends unknown>(
   draftKey: string,
-  data: T
+  data: T,
 ) {
   const drafts = getDrafts();
   const newDrafts = { ...drafts, [draftKey]: data };
@@ -65,7 +65,7 @@ export function deleteDraft(draftKey: string): void {
   const drafts = getDrafts();
 
   const newDrafts = Object.fromEntries(
-    Object.entries(drafts).filter(([key]) => key !== draftKey)
+    Object.entries(drafts).filter(([key]) => key !== draftKey),
   );
 
   setDrafts(newDrafts);

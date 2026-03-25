@@ -1,9 +1,9 @@
-import { Path } from "./path";
-import { Compute, Computed, SetValues } from "./utils";
+import { Path } from "./path.js";
+import { Compute, Computed, SetValues } from "./utils.js";
 
 export type ArrayItem<
   T,
-  P extends string
+  P extends string,
 > = P extends `${infer Key}.${infer Rest}`
   ? Key extends keyof T
     ? T[Key] extends Record<string, any>
@@ -11,10 +11,10 @@ export type ArrayItem<
       : never
     : never
   : P extends keyof T
-  ? T[P] extends Array<infer U>
-    ? U
-    : never
-  : never;
+    ? T[P] extends Array<infer U>
+      ? U
+      : never
+    : never;
 
 export type ArrayHelpers<T> = {
   /**

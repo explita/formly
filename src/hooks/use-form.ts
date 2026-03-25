@@ -19,36 +19,36 @@ import {
   FieldRegistrationOptions,
   ConditionalConfig,
   InferComputed,
-} from "../types/utils";
+} from "../types/utils.js";
 import {
   debounce,
   deleteDraft,
   validateForm,
   writeDraft,
   writeDraftImmediate,
-} from "../utils";
+} from "../utils/index.js";
 import {
   flattenFormValues,
   mapErrors,
   multiPathError,
   nestFormValues,
   shallowEqual,
-} from "../lib/utils";
-import { getDeepValue, getValueByPath } from "../lib/deep-path";
-import { formArrayHelper, handlerArrayHelpers } from "../lib/array-helpers";
+} from "../lib/utils.js";
+import { getDeepValue, getValueByPath } from "../lib/deep-path.js";
+import { formArrayHelper, handlerArrayHelpers } from "../lib/array-helpers.js";
 import {
   createEmptyValues,
   isZodError,
   isZodSchema,
   mapZodErrors,
-} from "../lib/zod-helpers";
-import { Path, PathValue } from "../types/path";
-import { groupHelpers } from "../lib/group-helpers";
-import { Field } from "../components";
-import { createFormBus } from "../lib/pub-sub";
-import { registry } from "../lib/form-registry";
-import { useFormInitialization } from "./use-form-initialization";
-import { createMetaContext } from "../lib/meta-context";
+} from "../lib/zod-helpers.js";
+import { Path, PathValue } from "../types/path.js";
+import { groupHelpers } from "../lib/group-helpers.js";
+import { Field } from "../components/field.js";
+import { createFormBus } from "../lib/pub-sub.js";
+import { registry } from "../lib/form-registry.js";
+import { useFormInitialization } from "./use-form-initialization.js";
+import { createMetaContext } from "../lib/meta-context.js";
 
 export function useForm<
   TSchema extends z.ZodObject<any> | undefined = undefined,

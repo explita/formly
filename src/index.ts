@@ -6,3 +6,4 @@ export * from "./hooks/use-form-context.js";
 export * from "./hooks/use-form-by-id.js";
 export type { HandlerContext, FormShape, FormInstance } from "./types/utils.js";
 export type * from "./types/array.js";
+export type * from "./types/path.js";

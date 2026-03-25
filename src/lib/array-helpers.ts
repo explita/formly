@@ -2,14 +2,14 @@ import {
   ArrayHelperProps,
   ArrayHelpers,
   HandlerArrayHelpers,
-} from "../types/array";
-import { getDeepValue, setDeepValue, setValueByPath } from "./deep-path";
-import { nestFormValues } from "./utils";
-import { Path } from "../types/path";
-import { Compute, SetValues } from "../types/utils";
+} from "../types/array.js";
+import { getDeepValue, setDeepValue, setValueByPath } from "./deep-path.js";
+import { nestFormValues } from "./utils.js";
+import { Path } from "../types/path.js";
+import { Compute, SetValues } from "../types/utils.js";
 
 export function formArrayHelper<T = any>(
-  props: ArrayHelperProps<T>
+  props: ArrayHelperProps<T>,
 ): ArrayHelpers<T> {
   const {
     path,
@@ -209,7 +209,7 @@ function generateComputedKeys<T>(
   startIndex: number,
   newValues: T[],
   compute: Compute<T>,
-  computed?: Compute<T>
+  computed?: Compute<T>,
 ) {
   if (!computed) return;
 
@@ -229,7 +229,7 @@ function generateComputedKeys<T>(
           computedKey,
           // @ts-ignore
           fieldDeps,
-          (vals) => template.fn(vals, index)
+          (vals) => template.fn(vals, index),
         );
       });
     }
@@ -238,7 +238,7 @@ function generateComputedKeys<T>(
 
 export function handlerArrayHelpers<T>(
   path: Path<T>,
-  data: T
+  data: T,
 ): HandlerArrayHelpers<T> {
   const api = {
     get: () => getDeepValue(data, path) ?? [],
@@ -273,7 +273,7 @@ function removeArrayItem<T>(
   formValues: T,
   setValues: SetValues<T>,
   path: string,
-  index: number
+  index: number,
 ) {
   const prefix = `${path}.`;
   const flat = { ...formValues };
@@ -306,7 +306,7 @@ function removeArrayItem<T>(
     const newIndex = currentIndex > index ? currentIndex - 1 : currentIndex;
     const newKey = key.replace(
       new RegExp(`^${prefix}${currentIndex}`),
-      `${prefix}${newIndex}`
+      `${prefix}${newIndex}`,
     );
     updated[newKey as keyof T] = flat[key as keyof T];
   }
@@ -344,7 +344,7 @@ export function getArrayKeys(path: string, values: any) {
 export function extraxtArrayPrefixies(
   path: string,
   index: number,
-  deps?: string[]
+  deps?: string[],
 ) {
   return (
     deps?.map((dep: string) => {

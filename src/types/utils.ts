@@ -3,9 +3,8 @@ import { Path, PathValue } from "./path.js";
 import { ArrayHelpers, ArrayItem, HandlerArrayHelpers } from "./array.js";
 import { GroupHelpers } from "./group.js";
 import { FieldHelpers } from "./field.js";
-import { Field } from "../components";
 import { createFormBus } from "../lib/pub-sub.js";
-import { ReactElement } from "react";
+import { ReactElement, JSX } from "react";
 
 export type FormShape<F> = F extends FormInstance<infer T> ? T : never;
 export type Prettify<T> = {
@@ -42,16 +41,16 @@ export type InputChangeEvent =
     >
   | React.FormEvent<HTMLButtonElement>;
 
-type InputMeta = {
+type InputMeta<T = any> = {
   name?: string;
-  value: string;
+  value: T;
   error?: string;
   hasError: boolean;
-  onChange: (value: any) => void;
+  onChange: (value: T) => void;
   internalRef: string;
 };
 
-export type FieldRegistration = {
+export type FieldRegistration<T = any> = {
   name: string;
   id: string;
   value: string;
@@ -78,9 +77,15 @@ export type FieldProps<T, P extends Path<T> = Path<T>> = {
   hideError?: boolean;
   className?: string;
   // **Render prop** alternative
-  render?: (props: FieldRegistration, meta: InputMeta) => React.ReactNode;
+  render?: (
+    props: FieldRegistration<PathValue<T, P>>,
+    meta: InputMeta<PathValue<T, P>>,
+  ) => React.ReactNode;
   // **Children as function**
-  children?: (props: FieldRegistration, meta: InputMeta) => React.ReactNode;
+  children?: (
+    props: FieldRegistration<PathValue<T, P>>,
+    meta: InputMeta<PathValue<T, P>>,
+  ) => React.ReactNode;
   transform?:
     | ((val: PathValue<T, P>) => unknown)
     | ((val: PathValue<T, P>) => unknown)[];
@@ -225,7 +230,7 @@ export type FormInstance<T> = {
   register: <P extends Path<T>>(
     name: P,
     options?: FieldRegistrationOptions<T, P>,
-  ) => FieldRegistration;
+  ) => FieldRegistration<PathValue<T, P>>;
   /**
    * A utility function to access and modify a specific form field.
    *
@@ -316,7 +321,7 @@ export type FormInstance<T> = {
       isValidated: boolean;
     };
   };
-  Field: typeof Field<T>;
+  Field: <P extends Path<T>>(props: FieldProps<T, P>) => JSX.Element;
   channel: ReturnType<typeof createFormBus<T>>["channel"];
   meta: FormMeta;
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { useFieldContext } from "../";
+import { useFieldContext } from "../index.js";
 
 export function FieldError() {
   const { message } = useFieldContext();

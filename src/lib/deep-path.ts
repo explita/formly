@@ -1,4 +1,4 @@
-import { nestFormValues } from "./utils";
+import { nestFormValues } from "./utils.js";
 
 export function getValueByPath<T extends any>(obj: T, path: string) {
   return (
@@ -13,7 +13,7 @@ export function getValueByPath<T extends any>(obj: T, path: string) {
 export function setValueByPath<T extends any>(
   obj: T,
   path: string,
-  value: any
+  value: any,
 ) {
   const keys = path.split(/[\.\[\]]+/).filter(Boolean);
   let current = obj;

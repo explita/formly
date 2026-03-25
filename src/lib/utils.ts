@@ -1,4 +1,4 @@
-import { Path } from "../types/path";
+import { Path } from "../types/path.js";
 
 /**
  * Combines multiple class names into a single string.
@@ -15,17 +15,20 @@ export function cn(...classes: (string | false | null | undefined)[]) {
 
 export function multiPathError<T>(
   paths: Path<T>[],
-  message: string
+  message: string,
 ): Partial<Record<Path<T>, string>> {
-  return paths.reduce((acc, path) => {
-    acc[path] = message;
-    return acc;
-  }, {} as Partial<Record<Path<T>, string>>);
+  return paths.reduce(
+    (acc, path) => {
+      acc[path] = message;
+      return acc;
+    },
+    {} as Partial<Record<Path<T>, string>>,
+  );
 }
 
 export function mapErrors(
   obj: Record<string, any>,
-  path = ""
+  path = "",
 ): Record<string, string> {
   const result: Record<string, string> = {};
 
@@ -44,7 +47,7 @@ export function mapErrors(
         if (item && typeof item === "object" && !Array.isArray(item)) {
           const keys = Object.keys(item);
           const hasOtherKeys = keys.some(
-            (k) => k !== "_index" && k !== "error"
+            (k) => k !== "_index" && k !== "error",
           );
 
           if (hasOtherKeys) {
@@ -52,7 +55,7 @@ export function mapErrors(
             for (const subKey in item) {
               if (subKey === "_index") continue;
               result[`${currentPath}.${index}.${subKey}`] = String(
-                item[subKey]
+                item[subKey],
               );
             }
           } else if ("error" in item) {
@@ -180,7 +183,7 @@ export function mergeValues<T extends any>(defaultValues: T, saved: T): T {
     result[key] =
       defaultValue !== undefined && defaultValue !== null && defaultValue !== ""
         ? defaultValue
-        : savedValue ?? defaultValue;
+        : (savedValue ?? defaultValue);
   }
 
   return result as T;
@@ -188,7 +191,7 @@ export function mergeValues<T extends any>(defaultValues: T, saved: T): T {
 
 export function determineDirtyFields<T extends any>(
   defaultValues: T,
-  saved: T
+  saved: T,
 ): T {
   const flattenDefaultValues = flattenFormValues(defaultValues);
   const flattenSaved = flattenFormValues(saved);
@@ -236,6 +239,6 @@ export function mergeInitialValues({
 
   return mergeValues(
     mergeValues(primary || {}, secondary || {}),
-    generatePlaceholders
+    generatePlaceholders,
   );
 }

@@ -1,10 +1,10 @@
 import { useContext, useEffect } from "react";
-import { FormContext, FormContextValue } from "../providers/form";
+import { FormContext, FormContextValue } from "../providers/form.js";
 import type { z } from "zod";
 
 export function useFormContext<
   TDefaultValues extends Record<string, any> = Record<string, any>,
-  TSchema extends z.ZodObject<any> | undefined = undefined
+  TSchema extends z.ZodObject<any> | undefined = undefined,
 >(props?: { schema?: TSchema }): FormContextValue<TSchema, TDefaultValues> {
   const form = useContext(FormContext) as FormContextValue<
     TSchema,

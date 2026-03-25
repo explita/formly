@@ -1,5 +1,5 @@
-import { GroupHelpersProps } from "../types/group";
-import { getDeepValue, setDeepValue } from "./deep-path";
+import { GroupHelpersProps } from "../types/group.js";
+import { getDeepValue, setDeepValue } from "./deep-path.js";
 
 export function groupHelpers<T>(props: GroupHelpersProps<T>) {
   const {

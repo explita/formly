@@ -1,17 +1,24 @@
-import { Path } from "../types/path";
-import { FieldRegistrationOptions, InputChangeEvent } from "../types/utils";
-import { useFormContext } from "./use-form-context";
+import { Path, PathValue } from "../types/path.js";
+import { FieldRegistrationOptions, InputChangeEvent } from "../types/utils.js";
+import { useFormContext } from "./use-form-context.js";
 import { useEffect, useId, useState } from "react";
 
-export function useField<T extends Record<string, any>>(
-  name: string,
-  options?: FieldRegistrationOptions<T, Path<T>>
-) {
-  const form = useFormContext();
+/**
+ * useField hook for managing a single form field's state.
+ * Supports explicit schema typing via useField<Schema>("path").
+ */
+export function useField<
+  T extends Record<string, any>,
+  P extends Path<T> = any,
+>(name: P, options?: FieldRegistrationOptions<T, P>) {
+  const form = useFormContext<T>();
   //@ts-ignore
   form.register(name, options, true);
 
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState<PathValue<T, P>>(
+    //@ts-ignore
+    form.getValue(name),
+  );
   const [error, setError] = useState<string | undefined>("");
   //@ts-ignore
   const [isDirty, setIsDirty] = useState<boolean>(form.isDirty(name));
@@ -36,12 +43,13 @@ export function useField<T extends Record<string, any>>(
 
   // Field helpers
   const bind = {
-    name,
-    value: value || "",
+    name: name as string,
+    value: (value ?? "") as any,
     onChange: (e: InputChangeEvent) => {
-      form.field(name).set(e.currentTarget.value);
+      const val = (e as any)?.target ? (e as any).target.value : e;
+      form.field(name as any).set(val as any);
 
-      setValue(e.currentTarget.value);
+      setValue(val as any);
       setIsDirty(true);
     },
     onBlur: () => {
@@ -61,11 +69,12 @@ export function useField<T extends Record<string, any>>(
     error,
     hasError: !!error,
     isTouched,
-    setValue: (value: any) => form.field(name).set(value),
+    setValue: (value: PathValue<T, P & Path<T>>) =>
+      form.field(name as any).set(value as any),
     reset: () => {
       //@ts-ignore
       form.resetField(name);
-      setValue("");
+      setValue(form.getValue(name as any) as any);
     },
     //@ts-ignore
     focus: () => form.focus(name),

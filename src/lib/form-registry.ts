@@ -1,4 +1,4 @@
-import { FormInstance } from "../types/utils";
+import { FormInstance } from "../types/utils.js";
 
 class FormRegistry {
   private forms = new Map<string, FormInstance<any>>();

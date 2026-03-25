@@ -1,22 +1,22 @@
 "use client";
 
 import React from "react";
-import { useForm } from "../hooks/use-form";
-import { css } from "../lib/css";
+import { useForm } from "../hooks/use-form.js";
+import { css } from "../lib/css.js";
 import type { z } from "zod";
 
 export type FormContextValue<
   TSchema extends z.ZodObject | undefined = undefined,
   DefaultValues = TSchema extends undefined
     ? Record<string, any>
-    : Partial<z.infer<TSchema>>
+    : Partial<z.infer<TSchema>>,
 > = ReturnType<typeof useForm<TSchema, DefaultValues>>;
 
 type FormProps<
   TSchema extends z.ZodObject | undefined = undefined,
   DefaultValues = TSchema extends undefined
     ? Record<string, any>
-    : Partial<z.infer<TSchema>>
+    : Partial<z.infer<TSchema>>,
 > = {
   use?: FormContextValue<TSchema, DefaultValues>;
   children: React.ReactNode;
@@ -26,7 +26,7 @@ type FormProps<
 
 // export const FormContext = createContext<FormContextValue | null>(null);
 export const FormContext = React.createContext<FormContextValue<any> | null>(
-  null
+  null,
 );
 
 /**
@@ -71,7 +71,7 @@ export function Form<
   TSchema extends z.ZodObject | undefined = undefined,
   DefaultValues = TSchema extends undefined
     ? Record<string, any>
-    : Partial<z.infer<TSchema>>
+    : Partial<z.infer<TSchema>>,
 >({
   children,
   use,

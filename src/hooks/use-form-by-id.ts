@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { registry } from "../lib/form-registry";
-import { FormInstance as BaseInstance } from "../types/utils";
+import { registry } from "../lib/form-registry.js";
+import { FormInstance as BaseInstance } from "../types/utils.js";
 
 type FormInstance<T> = Omit<BaseInstance<T>, "isDirty" | "Field"> & {
   isDirty: boolean;
@@ -8,7 +8,7 @@ type FormInstance<T> = Omit<BaseInstance<T>, "isDirty" | "Field"> & {
 
 export function useFormById<T extends Record<string, any>>(
   id: string,
-  field?: string
+  field?: string,
 ): FormInstance<T> {
   const [, setTick] = useState(0);
   const form = useMemo(() => registry.get(id) as BaseInstance<T>, [id]);

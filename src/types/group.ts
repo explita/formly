@@ -1,5 +1,5 @@
-import { Path, PathValue } from "./path";
-import { SetValues } from "./utils";
+import { Path, PathValue } from "./path.js";
+import { SetValues } from "./utils.js";
 
 export type GroupHelpersProps<T> = {
   path: Path<T>;

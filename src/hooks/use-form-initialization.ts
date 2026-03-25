@@ -1,12 +1,12 @@
-import { extraxtArrayPrefixies, getArrayKeys } from "../lib/array-helpers";
+import { extraxtArrayPrefixies, getArrayKeys } from "../lib/array-helpers.js";
 import {
   mergeInitialValues,
   flattenFormValues,
   shallowEqual,
-} from "../lib/utils";
+} from "../lib/utils.js";
 import { useEffect, useRef } from "react";
-import { readDraft } from "../utils";
-import { UseFormInitializationProps } from "../types/utils";
+import { readDraft } from "../utils/index.js";
+import { UseFormInitializationProps } from "../types/utils.js";
 
 export function useFormInitialization({
   defaultValues,
@@ -39,7 +39,7 @@ export function useFormInitialization({
 
     const defaultsUnchanged = shallowEqual(
       previousDefaultValuesRef.current,
-      flattenedDefaults
+      flattenedDefaults,
     );
 
     if (defaultsUnchanged) return;

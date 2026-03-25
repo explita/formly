@@ -1,11 +1,11 @@
 import React, { JSX, ReactNode, useEffect, useRef, useState } from "react";
-import { FormContextValue } from "../providers/form";
-import { Path, PathValue } from "../types/path";
+import { FormContextValue } from "../providers/form.js";
+import { Path, PathValue } from "../types/path.js";
 
 // Overload 1: select is provided
 export function FormSpy<
   DefaultValues extends Record<string, any>,
-  P extends Path<DefaultValues>
+  P extends Path<DefaultValues>,
 >({
   form,
   watch,
@@ -19,7 +19,7 @@ export function FormSpy<
 // Overload 2: select is not provided
 export function FormSpy<
   DefaultValues extends Record<string, any>,
-  P extends Path<DefaultValues>
+  P extends Path<DefaultValues>,
 >({
   form,
   render,
@@ -30,7 +30,7 @@ export function FormSpy<
 
 export function FormSpy<
   DefaultValues extends Record<string, any>,
-  P extends Path<DefaultValues>
+  P extends Path<DefaultValues>,
 >({
   form,
   watch,
@@ -41,12 +41,13 @@ export function FormSpy<
   render: (selected: PathValue<DefaultValues, P>) => ReactNode;
 }) {
   const [selected, setSelected] = useState(() =>
-    watch ? form.field(watch).get() : form.values
+    watch ? form.field(watch).get() : form.values,
   ) as any;
 
   const prevRef = useRef(selected);
 
   useEffect(() => {
+    //@ts-ignore
     const unsubscribe = form.subscribe((values) => {
       const next = watch ? form.field(watch).get() : values;
       if (JSON.stringify(prevRef.current) !== JSON.stringify(next)) {
