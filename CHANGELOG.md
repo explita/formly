@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Live patch diffing payload representation (`getChanges()`).
   - Active validation errors, flat dirty path lists, touched trackers, metadata map, and dropdown loading states.
   - Interactive Action Panel to manually trigger validations, resets, step routing, or state overrides.
+  - Footer toolbar with direct links to the Live Demos & Playground ([formly.explita.ng](https://formly.explita.ng)), npm package page, and GitHub repository.
 - **Cascading Dropdowns (`cascade`)**: Declarative selector relationships that automatically fetch and options-bind choices upon dependency updates with full TypeScript autocompletion.
 - **Accidental Navigation Prevention (`preventUnload`)**: Option to automatically block page reloads, tab closures, and accidental browser route changes when the form has unsaved/dirty state.
 - **Input Normalization & Auto-Formatters (`normalize`)**: Real-time value sanitization and formatting directly on user keystrokes (e.g. UPPERCASING, phone digit formatting, spacing, etc.).

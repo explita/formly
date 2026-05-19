@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Globe, MapPin, Check, RotateCcw, Loader2 } from "lucide-react";
 
 const cascadingSchema = z.object({
@@ -179,7 +179,7 @@ export function CascadingFormExample() {
                 render={(props) => {
                   const isCityLoading = !!form.cascade.city?.isLoading;
                   const isCountrySelected = !!form.getValue("country");
- 
+
                   return (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">

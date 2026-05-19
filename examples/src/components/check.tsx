@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Input } from "./input";
 import { Label } from "./label";
 import {
@@ -21,10 +21,10 @@ const passwordSchema = z.object({
 
 /**
  * CrossFieldCheckExample demonstrates custom error styling and layout.
- * 
- * By using `hideError={true}` on `<form.Field>`, we prevent the default 
- * automatic error message banner from rendering. We then use the callback 
- * context's `hasError` and `error` parameters to manually bind error states 
+ *
+ * By using `hideError={true}` on `<form.Field>`, we prevent the default
+ * automatic error message banner from rendering. We then use the callback
+ * context's `hasError` and `error` parameters to manually bind error states
  * directly to input borders and custom error markup.
  */
 export function CrossFieldCheckExample() {
@@ -149,9 +149,7 @@ export function CrossFieldCheckExample() {
                 hideError={true}
                 render={(props, { hasError, error }) => (
                   <div className="space-y-1.5">
-                    <Label>
-                      New Password
-                    </Label>
+                    <Label>New Password</Label>
                     <div className="relative">
                       <Input
                         {...props}
@@ -204,9 +202,7 @@ export function CrossFieldCheckExample() {
                 hideError={true}
                 render={(props, { hasError, error }) => (
                   <div className="space-y-1.5">
-                    <Label>
-                      Confirm Password
-                    </Label>
+                    <Label>Confirm Password</Label>
                     <div className="relative">
                       <Input
                         {...props}

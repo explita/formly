@@ -2,7 +2,7 @@
 
 import React from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Input } from "./input";
 import { Label } from "./label";
 import {
@@ -148,9 +148,7 @@ export function DraftPersistenceExample() {
                 name="body"
                 render={(props) => (
                   <div className="space-y-1">
-                    <Label>
-                      Body
-                    </Label>
+                    <Label>Body</Label>
                     <textarea
                       {...props}
                       rows={3}

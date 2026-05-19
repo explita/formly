@@ -2,7 +2,7 @@
 
 import React from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Input } from "./input";
 import { Label } from "./label";
 import {
@@ -128,9 +128,7 @@ export function ConditionalExample() {
                 name="accountType"
                 render={(props, { value, onChange }) => (
                   <div className="space-y-1.5">
-                    <Label>
-                      Account Type
-                    </Label>
+                    <Label>Account Type</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {(["personal", "business"] as const).map((type) => (
                         <button
@@ -173,9 +171,7 @@ export function ConditionalExample() {
                 name="fullName"
                 render={(props) => (
                   <div className="space-y-1">
-                    <Label>
-                      Full Name
-                    </Label>
+                    <Label>Full Name</Label>
                     <Input
                       {...props}
                       placeholder="Your legal name"
@@ -192,9 +188,7 @@ export function ConditionalExample() {
                     name="dateOfBirth"
                     render={(props) => (
                       <div className="space-y-1">
-                        <Label>
-                          Date of Birth
-                        </Label>
+                        <Label>Date of Birth</Label>
                         <Input
                           {...props}
                           type="date"
@@ -213,9 +207,7 @@ export function ConditionalExample() {
                     name="companyName"
                     render={(props) => (
                       <div className="space-y-1">
-                        <Label>
-                          Company Name
-                        </Label>
+                        <Label>Company Name</Label>
                         <Input
                           {...props}
                           placeholder="Acme Corp"
@@ -229,9 +221,7 @@ export function ConditionalExample() {
                       name="taxId"
                       render={(props) => (
                         <div className="space-y-1">
-                          <Label>
-                            Tax ID
-                          </Label>
+                          <Label>Tax ID</Label>
                           <Input
                             {...props}
                             placeholder="EIN / VAT"
@@ -244,9 +234,7 @@ export function ConditionalExample() {
                       name="employeeCount"
                       render={(props) => (
                         <div className="space-y-1">
-                          <Label>
-                            Employees
-                          </Label>
+                          <Label>Employees</Label>
                           <select
                             {...props}
                             className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-400 rounded-lg px-3 py-1.5 text-slate-900 dark:text-slate-100 outline-none transition-all duration-200 appearance-none"

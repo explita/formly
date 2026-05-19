@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Input } from "./input";
 import { Label } from "./label";
 import {
@@ -221,14 +221,12 @@ export function WizardFormExample() {
                       </div>
                     )}
                   />
- 
+
                   <form.Field
                     name="age"
                     render={(props, { onChange }) => (
                       <div className="space-y-1">
-                        <Label className="text-[11px]">
-                          Age
-                        </Label>
+                        <Label className="text-[11px]">Age</Label>
                         <Input
                           {...props}
                           type="number"
@@ -270,9 +268,7 @@ export function WizardFormExample() {
                     name="zipCode"
                     render={(props) => (
                       <div className="space-y-1">
-                        <Label className="text-[11px]">
-                          ZIP Code
-                        </Label>
+                        <Label className="text-[11px]">ZIP Code</Label>
                         <Input
                           {...props}
                           placeholder="e.g. 94103"

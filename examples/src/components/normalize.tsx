@@ -2,7 +2,7 @@
 
 import React from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Input } from "./input";
 import { Label } from "./label";
 import {

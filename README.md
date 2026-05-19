@@ -568,7 +568,7 @@ If a computed field depends on external React variables (like props, global cont
 
 ```tsx
 import { useState } from "react";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 
 function ProductInvoice() {
   const [taxRate, setTaxRate] = useState(0.15); // External state dependency

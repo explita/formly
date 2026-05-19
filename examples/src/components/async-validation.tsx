@@ -2,7 +2,7 @@
 
 import React from "react";
 import { z } from "zod";
-import { useForm, Form } from "@explita/formly";
+import { Form, useForm } from "@/dist";
 import { Input } from "./input";
 import { Label } from "./label";
 import {
@@ -183,8 +183,16 @@ export function AsyncValidationExample() {
                       <Input
                         {...props}
                         placeholder="e.g. jane_dev (try: alice, bob)"
-                        className={status === "ok" ? "border-emerald-500/50 focus:border-emerald-500" : ""}
-                        focusClassName={status !== "ok" ? "focus:border-violet-500 dark:focus:border-violet-400 focus:ring-violet-500/30" : undefined}
+                        className={
+                          status === "ok"
+                            ? "border-emerald-500/50 focus:border-emerald-500"
+                            : ""
+                        }
+                        focusClassName={
+                          status !== "ok"
+                            ? "focus:border-violet-500 dark:focus:border-violet-400 focus:ring-violet-500/30"
+                            : undefined
+                        }
                       />
                     </div>
                   );
@@ -229,8 +237,16 @@ export function AsyncValidationExample() {
                         {...props}
                         type="email"
                         placeholder="e.g. jane@dev.com (try: alice@example.com)"
-                        className={status === "ok" ? "border-emerald-500/50 focus:border-emerald-500" : ""}
-                        focusClassName={status !== "ok" ? "focus:border-violet-500 dark:focus:border-violet-400 focus:ring-violet-500/30" : undefined}
+                        className={
+                          status === "ok"
+                            ? "border-emerald-500/50 focus:border-emerald-500"
+                            : ""
+                        }
+                        focusClassName={
+                          status !== "ok"
+                            ? "focus:border-violet-500 dark:focus:border-violet-400 focus:ring-violet-500/30"
+                            : undefined
+                        }
                       />
                     </div>
                   );
