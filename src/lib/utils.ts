@@ -208,12 +208,37 @@ export function determineDirtyFields<T extends any>(
     const savedValue = flattenSaved[key];
     const defaultValue = flattenDefaultValues[key];
 
-    if (savedValue === defaultValue) continue;
+    if (areFlatValuesEqual(savedValue, defaultValue)) continue;
 
     result[key] = true;
   }
 
   return result as T;
+}
+
+export function areFlatValuesEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() === b.getTime();
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!areFlatValuesEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length !== bKeys.length) return false;
+    return aKeys.every((k) => areFlatValuesEqual(a[k], b[k]));
+  }
+
+  return false;
 }
 
 export function shallowEqual(a: Record<string, any>, b: Record<string, any>) {

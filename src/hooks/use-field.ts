@@ -30,14 +30,22 @@ export function useField<
   useEffect(() => {
     if (!form || !name) return;
 
+    const handleUpdate = (newVal: any) => {
+      setValue(newVal);
+      //@ts-ignore
+      setIsDirty(form.isDirty(name));
+      //@ts-ignore
+      setIsTouched(form.isTouched(name));
+    };
+
     //@ts-ignore
-    form.subscribe(name, setValue, { internalRef: refId });
+    form.subscribe(name, handleUpdate, { internalRef: refId });
     //@ts-ignore
     form.subscribeFieldError(name, setError);
 
     return () => {
       //@ts-ignore
-      form.unsubscribeField(name, setValue);
+      form.unsubscribeField(name, handleUpdate);
     };
   }, [name]);
 
@@ -69,12 +77,21 @@ export function useField<
     error,
     hasError: !!error,
     isTouched,
+    touched: isTouched,
+    isDirty,
+    dirty: isDirty,
     setValue: (value: PathValue<T, P & Path<T>>) =>
       form.field(name as any).set(value as any),
     reset: () => {
       //@ts-ignore
       form.resetField(name);
       setValue(form.getValue(name as any) as any);
+      setIsDirty(false);
+      setIsTouched(false);
+    },
+    validate: () => {
+      //@ts-ignore
+      return form.field(name as any).validate();
     },
     //@ts-ignore
     focus: () => form.focus(name),

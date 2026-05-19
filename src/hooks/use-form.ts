@@ -1,24 +1,20 @@
 "use client";
 
 import type { z } from "zod";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   InputValue,
   HandlerContext,
   FormInstance,
-  FormValues,
+  FormOptions,
   Subscriber,
   ComputedField,
+  CascadeField,
   FieldRegistrationOptions,
   ConditionalConfig,
   InferComputed,
+  Prettify,
+  SchemaType,
 } from "../types/utils.js";
 import {
   debounce,
@@ -33,6 +29,7 @@ import {
   multiPathError,
   nestFormValues,
   shallowEqual,
+  areFlatValuesEqual,
 } from "../lib/utils.js";
 import { getDeepValue, getValueByPath } from "../lib/deep-path.js";
 import { formArrayHelper, handlerArrayHelpers } from "../lib/array-helpers.js";
@@ -50,17 +47,113 @@ import { registry } from "../lib/form-registry.js";
 import { useFormInitialization } from "./use-form-initialization.js";
 import { createMetaContext } from "../lib/meta-context.js";
 
+/**
+ * A highly performant, custom React hook designed to orchestrate state, validation,
+ * array helpers, draft persistence, and event subscriptions for forms of any complexity.
+ *
+ * Provides type-safe validation using Zod schemas, dynamic computed properties,
+ * debounced async field validations, cascading dropdown option loading,
+ * nested object manipulation, and optimal re-rendering.
+ *
+ * @template TSchema - An optional Zod Object schema representing the form structure.
+ * @template TDefault - The shape of the default values. If `TSchema` is provided, defaults to `z.infer<TSchema>`.
+ * @template TComputed - The shape of computed/derived properties mapped to their dependency paths.
+ * @template TAsyncValidation - Record of async validation configurations (e.g., uniqueness checks).
+ * @template TCascade - Record of cascading dropdown option configurations.
+ *
+ * @param {FormOptions<TSchema, TDefault, TComputed, TAsyncValidation, TCascade>} [options] - Configuration options for the form instance.
+ *
+ * @returns {FormInstance} A unified controller object containing form states (values, errors, flags) and manipulation helpers.
+ *
+ * @example
+ * ```tsx
+ * const userSchema = z.object({
+ *   username: z.string().min(3),
+ *   branchId: z.string(),
+ *   referrerId: z.string(),
+ * });
+ *
+ * const form = useForm({
+ *   schema: userSchema,
+ *   defaultValues: { username: "", branchId: "", referrerId: "" },
+ *   validateOn: "change-submit",
+ *   asyncValidate: {
+ *     username: {
+ *       debounce: 1000,
+ *       validate: async (value) => {
+ *         const isUnique = await api.checkUsername(value);
+ *         return isUnique ? null : "Username is already taken";
+ *       },
+ *     },
+ *   },
+ *   cascade: {
+ *     referrerId: {
+ *       watch: ["branchId"],
+ *       fn: async ([branchId]) => {
+ *         if (!branchId) return [];
+ *         return await api.getReferrers(branchId);
+ *       },
+ *     },
+ *   },
+ * });
+ *
+ * return (
+ *   <form onSubmit={form.handleSubmit(data => console.log(data))}>
+ *     <input value={form.values.username} onChange={e => form.setValue("username", e.target.value)} />
+ *     {form.validatingFields.username && <span>Checking availability...</span>}
+ *     {form.errors.username && <span>{form.errors.username}</span>}
+ *
+ *     <select value={form.values.branchId} onChange={e => form.setValue("branchId", e.target.value)}>
+ *       <option value="1">Branch 1</option>
+ *       <option value="2">Branch 2</option>
+ *     </select>
+ *
+ *     <select value={form.values.referrerId} onChange={e => form.setValue("referrerId", e.target.value)}>
+ *       {form.cascade.referrerId?.map(ref => (
+ *         <option key={ref.id} value={ref.id}>{ref.name}</option>
+ *       ))}
+ *     </select>
+ *
+ *     <button type="submit">Submit</button>
+ *   </form>
+ * );
+ * ```
+ */
 export function useForm<
   TSchema extends z.ZodObject<any> | undefined = undefined,
   TDefault = TSchema extends z.ZodObject<any>
     ? z.infer<TSchema>
     : Record<string, any>,
   TComputed extends Record<string, any> = {},
+  TAsyncValidation extends Record<string, any> = {},
+  TCascade extends Record<string, any> = {},
+  TSteps extends Array<Array<Path<SchemaType<TSchema, TDefault>>>> | undefined =
+    undefined,
 >(
-  options?: FormValues<TSchema, TDefault, TComputed>,
+  options?: FormOptions<
+    TSchema,
+    TDefault,
+    TComputed,
+    TAsyncValidation,
+    any,
+    TSteps
+  > & {
+    cascade?: {
+      [K in keyof TCascade]: CascadeField<
+        SchemaType<TSchema, TDefault>,
+        TCascade[K]
+      >;
+    };
+    // steps?: Array<Array<Path<SchemaType<TSchema, TDefault>>>>;
+  },
 ): FormInstance<
-  (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : TDefault) &
-    InferComputed<TComputed>
+  TSchema extends z.ZodObject<any>
+    ? Prettify<z.infer<TSchema> & InferComputed<TComputed>>
+    : Prettify<TDefault & InferComputed<TComputed>>,
+  TAsyncValidation,
+  TCascade,
+  //@ts-expect-error steps is not infered correctly
+  TSteps
 > {
   const {
     schema,
@@ -76,9 +169,17 @@ export function useForm<
     autoFocusOnError = true,
     savedFormFirst = true,
     id,
+    preventUnload = false,
   } = options || {};
 
+  const formIdRef = useRef<string>(
+    id || `form_${Math.random().toString(36).substring(2, 9)}`,
+  );
   const persistKey = options?.persistKey ?? options?.id;
+
+  const cascadeRef = useRef(options?.cascade);
+  cascadeRef.current = options?.cascade;
+  const arrayKeysRef = useRef<Record<string, string[]>>({});
 
   const channelBus = useMemo(() => createFormBus(), []);
 
@@ -87,6 +188,36 @@ export function useForm<
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [, forceRender] = useState(0);
+  const isMountedRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // validation state for debounced async operations
+  const [validatingFields, setValidatingFields] = useState<
+    Record<string, boolean>
+  >({});
+  const isValidating = Object.values(validatingFields).some(Boolean);
+
+  const [loadingCascades, setLoadingCascades] = useState<
+    Record<string, boolean>
+  >({});
+  const asyncTimersRef = useRef<Record<string, any>>({});
+  const asyncVersionsRef = useRef<Record<string, number>>({});
+
+  let runAsyncValidation: (
+    name: string,
+    value: any,
+    prev?: any,
+  ) => void = () => {};
+  let runAllAsyncValidations: () => Promise<{
+    success: boolean;
+    errors: Record<string, string>;
+  }> = async () => ({ success: true, errors: {} });
 
   // Draft listeners
   const draftListeners = useRef<{
@@ -96,8 +227,13 @@ export function useForm<
 
   // values
   const formValues = useRef({} as Record<string, any>);
+  const initialValuesRef = useRef<any>(null);
+  if (initialValuesRef.current === null) {
+    initialValuesRef.current = structuredClone(defaultValues);
+  }
   const computing = useRef<Set<string>>(new Set());
   const computedFieldsRef = useRef<Record<string, ComputedField<TDefault>>>({});
+  const computedUnsubscribesRef = useRef<Record<string, (() => void)[]>>({});
 
   // watched fields state (triggers re-renders)
   const watchedFieldsRef = useRef<Set<string>>(new Set());
@@ -128,6 +264,7 @@ export function useForm<
 
   // store field refs
   const fieldRefs = useRef<Record<string, string>>({});
+  const registerUnsubsRef = useRef<Record<string, (() => void)[]>>({});
 
   const pendingFields = new Set<string>();
   let notifyScheduled = false;
@@ -165,9 +302,8 @@ export function useForm<
   //validate on values change
   useEffect(() => {
     const handler = debounce(() => {
-      formValidation().then(({ isValidated, formValues: values }) => {
+      formValidation().then(({ isValidated }) => {
         setIsValidated(isValidated);
-        formValues.current = values;
       });
     }, 200);
 
@@ -216,18 +352,16 @@ export function useForm<
 
   const writeDraftDebounced = useCallback(
     (channel?: "immediate" | "debounced") => {
-      if (!persistKey) return () => {};
+      if (!persistKey) return;
 
       draftListeners.current.save?.(formValues.current);
 
       if (channel === "immediate") {
-        return writeDraftImmediate(
-          persistKey,
-          nestFormValues(formValues.current),
-        );
+        writeDraftImmediate(persistKey, nestFormValues(formValues.current));
+        return;
       }
 
-      return writeDraft(persistKey, nestFormValues(formValues.current));
+      writeDraft(persistKey, nestFormValues(formValues.current));
     },
     [persistKey],
   );
@@ -236,15 +370,31 @@ export function useForm<
     currentSchema.current = newSchema;
   }, []);
 
-  function triggerRerender() {
-    forceRender((prev) => prev + 1);
-  }
+  const triggerRerender = useCallback(() => {
+    if (isMountedRef.current) {
+      forceRender((prev) => prev + 1);
+    }
+  }, []);
 
   const setValue = useCallback(
     (name: string, value: any, opts: { silent?: boolean } = {}) => {
       if (mode === "uncontrolled") return;
 
+      const previousValue = formValues.current[name];
+
+      // Apply declarative normalizer if present
+      if (options?.normalize && (options.normalize as any)[name]) {
+        value = (options.normalize as any)[name](value, previousValue);
+      }
+
       value = applyTransformations(name as string, value);
+
+      // If value hasn't changed (e.g., invalid characters stripped by normalizer), exit early!
+      if (previousValue === value) {
+        // 🔔 Notify subscribers
+        notifySubscribers(name as any);
+        return;
+      }
 
       // Always update ref for consistency
       formValues.current[name] = value;
@@ -259,6 +409,8 @@ export function useForm<
           (validateOn === "change-submit" || validateOn === "change")
         ) {
           validateField(name, value);
+          // Trigger debounced async validation with previous value reference
+          runAsyncValidation(name, value, previousValue);
         }
 
         const validator = fieldsValidationsRef.current.get(name);
@@ -271,8 +423,8 @@ export function useForm<
         // 🔔 Notify subscribers
         notifySubscribers(name as any);
 
-        // Update state if field is watched (triggers re-render)
-        if (watchedFieldsRef.current.has(name)) {
+        // Update state if field is watched or we are in controlled mode (triggers re-render)
+        if (watchedFieldsRef.current.has(name) || mode === "controlled") {
           writeDraftDebounced("immediate");
           triggerRerender();
         } else {
@@ -281,7 +433,7 @@ export function useForm<
         }
       }
     },
-    [mode, writeDraftDebounced],
+    [mode, writeDraftDebounced, runAsyncValidation],
   );
 
   const setValues = useCallback(
@@ -390,8 +542,11 @@ export function useForm<
     debounce(async (name: string, inputValue?: InputValue) => {
       if (!name || !currentSchema.current || mode === "uncontrolled") return;
 
+      const valToValidate =
+        inputValue !== undefined ? inputValue : formValues.current[name];
+
       const result = await validateForm(currentSchema.current, {
-        [name]: inputValue,
+        [name]: valToValidate,
       });
 
       if (!result.success) {
@@ -415,7 +570,10 @@ export function useForm<
     );
 
     if (result.success) {
-      formValues.current = flattenFormValues(result.data);
+      formValues.current = {
+        ...formValues.current,
+        ...flattenFormValues(result.data),
+      };
     }
 
     return {
@@ -492,126 +650,43 @@ export function useForm<
       resetErrors();
     }
 
+    // 3️⃣ Async validations
+    if (options?.asyncValidate) {
+      const asyncResult = await runAllAsyncValidations();
+      if (!asyncResult.success) {
+        setIsValidated(false);
+        setErrors({ ...formErrors.current, ...asyncResult.errors });
+        focusFirst(asyncResult.errors);
+        return;
+      }
+    }
+
     // resetErrors();
 
     return getValues();
   }
 
-  const register = useCallback(
-    <P extends Path<TDefault>>(
-      name: P,
-      options?: FieldRegistrationOptions<TDefault, P>,
-      internal?: boolean,
-    ) => {
-      const [error, setError] = useState<string | undefined>(
-        formErrors.current[name],
-      );
-      // internal value ref
-      const valueRef = useRef(getValue(name));
-
-      const refId = name + "-" + useId();
-
-      // setup field metadata on mount
-      useEffect(() => {
-        if (options) {
-          fieldRegistryRef.current[name] = options;
-
-          if (options.transform) {
-            const arr = Array.isArray(options.transform)
-              ? options.transform
-              : [options.transform];
-            fieldsTransformsRef.current.set(name, arr);
-          } else {
-            fieldsTransformsRef.current.delete(name);
-          }
-
-          //@ts-ignore
-          if (options.compute) {
-            //@ts-ignore
-            const { deps, fn } = options.compute;
-            compute(name, deps, fn);
-          }
-
-          if (options.validate) {
-            fieldsValidationsRef.current.set(name, options.validate);
-          } else {
-            fieldsValidationsRef.current.delete(name);
-          }
-
-          // handle defaultValue only when field is initially undefined
-          const currentValue = getValue(name);
-          if (
-            options.defaultValue !== undefined &&
-            currentValue === undefined
-          ) {
-            setValue(name, options.defaultValue, { silent: true });
-          }
-        }
-
-        if (!internal) {
-          // subscribe to internal store → updates ref but not UI
-          const unsub = subscribe(name, (val) => {
-            valueRef.current = val;
-          });
-
-          const unsubError = subscribeFieldError(name, setError);
-
-          return () => {
-            unsub();
-            unsubError();
-            delete fieldRegistryRef.current[name];
-            fieldsTransformsRef.current.delete(name);
-            fieldsValidationsRef.current.delete(name);
-          };
-        }
-      }, [name, options]); // keep stable
-
-      // handlers
-      const onChange = useCallback(
-        (e: any) => {
-          const val = e?.target?.value ?? e;
-
-          setValue(name, val);
-          touchedFieldsRef.current[name] = true;
-          dirtyFieldsRef.current[name] = true;
-
-          if (["change", "change-submit"].includes(validateOn)) {
-            validateField(name);
-          }
-        },
-        [name],
-      );
-
-      const onBlur = useCallback(() => {
-        touchedFieldsRef.current[name] = true;
-        if (validateOn === "blur") {
-          validateField(name);
-        }
-      }, [name]);
-
-      return {
-        name,
-        defaultValue: valueRef.current,
-        onChange,
-        onBlur,
-        "data-input-ref": refId,
-        "data-input-error": !!error,
-        "aria-invalid": !!error,
-      };
-    },
-    [],
-  );
-
   const focus = useCallback((name: string) => {
     if (typeof document === "undefined") return;
     const ref = fieldRefs.current[name];
+    if (!ref) return;
 
-    const element = document.querySelector(`[data-input-ref="${ref}"]`) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
-    if (element && typeof element.focus === "function") {
-      element.focus();
+    let element = document.querySelector(
+      `[data-input-ref="${ref}"]`,
+    ) as HTMLElement;
+    if (element) {
+      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName);
+      if (!isInput) {
+        const nested = element.querySelector(
+          "input, textarea, select",
+        ) as HTMLElement;
+        if (nested) {
+          element = nested;
+        }
+      }
+      if (typeof element.focus === "function") {
+        element.focus();
+      }
     }
   }, []);
 
@@ -632,7 +707,7 @@ export function useForm<
     if (notifyScheduled) return;
     notifyScheduled = true;
 
-    queueMicrotask(() => {
+    setTimeout(() => {
       notifyScheduled = false;
 
       // Capture and clear pending fields
@@ -731,6 +806,7 @@ export function useForm<
     name: string,
     fn: (values: TDefault, index: number) => any,
     index?: number,
+    opts?: { silent?: boolean },
   ) {
     if (computing.current.has(name)) return; // avoid infinite loops
     computing.current.add(name);
@@ -743,12 +819,12 @@ export function useForm<
       if (result instanceof Promise) {
         result.then((value) => {
           if (value !== currentValue) {
-            setValue(name, value);
+            setValue(name, value, opts);
           }
         });
       } else {
         if (result !== currentValue) {
-          setValue(name, result);
+          setValue(name, result, opts);
         }
       }
     } finally {
@@ -759,9 +835,10 @@ export function useForm<
   const compute = useCallback(
     (
       name: string,
-      depsOrFn: string[] | ((values: any, index: number) => any),
+      depsOrFn: any[] | ((values: any, index: number) => any),
       maybeFn?: (values: any, index: number) => any,
       index?: number,
+      opts?: { silent?: boolean },
     ) => {
       const deps = Array.isArray(depsOrFn) ? depsOrFn : null;
       const fn = Array.isArray(depsOrFn) ? maybeFn! : depsOrFn;
@@ -777,20 +854,34 @@ export function useForm<
         throw new Error("Invalid compute function");
       }
 
+      // Cleanup previous subscriptions for this computed field
+      if (computedUnsubscribesRef.current[name]) {
+        computedUnsubscribesRef.current[name].forEach((unsub) => unsub());
+      }
+      computedUnsubscribesRef.current[name] = [];
+
       // Store for introspection
       //@ts-ignore
       computedFieldsRef.current[name as string] = { deps, fn };
 
       // Initial compute
-      void safeCompute(name, fn, index);
+      void safeCompute(name, fn, index, opts);
 
       // Subscribe to form changes
       if (deps && deps.length > 0) {
         deps.forEach((dep) => {
-          subscribe(dep, () => void safeCompute(name, fn, index));
+          // Only subscribe if dependency is a string (field name)
+          if (typeof dep === "string") {
+            const unsub = subscribe(
+              dep,
+              () => void safeCompute(name, fn, index),
+            );
+            computedUnsubscribesRef.current[name].push(unsub);
+          }
         });
       } else {
-        subscribe(() => void safeCompute(name, fn, index));
+        const unsub = subscribe(() => void safeCompute(name, fn, index));
+        computedUnsubscribesRef.current[name].push(unsub);
       }
     },
     [],
@@ -1018,21 +1109,45 @@ export function useForm<
     );
 
     dirtyFieldsRef.current = {};
+    touchedFieldsRef.current = {};
 
-    setValues(
-      { ...generatePlaceholders, ...defaultValues },
-      { overwrite: true },
-      true,
-    );
+    formValues.current = flattenFormValues({
+      ...generatePlaceholders,
+      ...defaultValues,
+    });
 
-    channelBus.channel("value:*").emit({});
+    channelBus.channel("value:*").emit(getValues());
+
+    // 🔔 Notify all field subscribers of the cleared value
+    Object.keys(formValues.current).forEach((key) => {
+      channelBus.channel(`value:${key}` as any).emit(getValue(key));
+    });
 
     setErrors({});
+    formErrors.current = {};
 
     if (persistKey) deleteDraft(persistKey);
 
+    // 🔔 Clear form metadata context
+    // metaRef.current.clear();
+
+    // 🔔 Reset wizard step state back to step 1
+    setCurrentStep(0);
+
+    // 🔔 Re-calculate all computed fields after reset
+    Object.entries(computedFieldsRef.current).forEach(([name, { fn }]) => {
+      void safeCompute(name, fn, undefined, { silent: true });
+    });
+
     triggerRerender();
-  }, []);
+  }, [
+    defaultValues,
+    persistKey,
+    getValues,
+    getValue,
+    generatePlaceholders,
+    triggerRerender,
+  ]);
 
   const resetField = useCallback((name: string) => {
     const combined = { ...generatePlaceholders, ...defaultValues };
@@ -1058,6 +1173,107 @@ export function useForm<
     dirtyFieldsRef.current[name] = true;
   }, []);
 
+  // -----------------------------
+  // Async Validation Assignments
+  // -----------------------------
+  runAsyncValidation = useCallback(
+    (name: string, value: any, prevValue?: any) => {
+      const config = (options?.asyncValidate as any)?.[name];
+      if (!config) return;
+
+      // Clear previous timer for this field
+      if (asyncTimersRef.current[name]) {
+        clearTimeout(asyncTimersRef.current[name]);
+      }
+
+      // Set current version of this request
+      const currentVersion = (asyncVersionsRef.current[name] || 0) + 1;
+      asyncVersionsRef.current[name] = currentVersion;
+
+      const debounceTime = config.debounce ?? 500;
+
+      asyncTimersRef.current[name] = setTimeout(async () => {
+        setValidatingFields((prev) => ({ ...prev, [name]: true }));
+        try {
+          const error = await config.validate(value, prevValue);
+
+          // If this is still the latest request version, commit it!
+          if (asyncVersionsRef.current[name] === currentVersion) {
+            setFieldError(name, error || undefined);
+          }
+        } catch (err) {
+          if (asyncVersionsRef.current[name] === currentVersion) {
+            setFieldError(name, "Validation failed");
+          }
+        } finally {
+          if (asyncVersionsRef.current[name] === currentVersion) {
+            setValidatingFields((prev) => {
+              const next = { ...prev };
+              delete next[name];
+              return next;
+            });
+          }
+          setTimeout(() => focus(name), 10);
+        }
+      }, debounceTime);
+    },
+    [options, setFieldError, focus],
+  );
+
+  runAllAsyncValidations = useCallback(async () => {
+    const asyncConfigs = options?.asyncValidate;
+    if (!asyncConfigs) return { success: true, errors: {} };
+
+    const errors: Record<string, string> = {};
+    const promises = Object.entries(asyncConfigs).map(
+      async ([name, config]: [string, any]) => {
+        if (!config) return;
+        const value = getValue(name);
+        const prevValue = getValueByPath(initialValuesRef.current, name);
+
+        setValidatingFields((prev) => ({ ...prev, [name]: true }));
+        try {
+          const error = await config.validate(value, prevValue);
+          if (error) {
+            errors[name] = error;
+          }
+        } catch (err) {
+          errors[name] = "Validation failed";
+        } finally {
+          setValidatingFields((prev) => {
+            const next = { ...prev };
+            delete next[name];
+            return next;
+          });
+        }
+      },
+    );
+
+    await Promise.all(promises);
+    return {
+      success: Object.keys(errors).length === 0,
+      errors,
+    };
+  }, [options, getValue, focus]);
+
+  // -----------------------------
+  // Patch Diffing (getChanges)
+  // -----------------------------
+  const getChanges = useCallback(() => {
+    const flatDefaults = flattenFormValues(
+      initialValuesRef.current || defaultValues,
+    );
+    const flatCurrent = flattenFormValues(formValues.current);
+    const changes: Record<string, any> = {};
+    for (const key in flatCurrent) {
+      if (!areFlatValuesEqual(flatCurrent[key], flatDefaults[key])) {
+        changes[key] = flatCurrent[key];
+      }
+    }
+
+    return nestFormValues(changes);
+  }, []);
+
   function createHandlerContext(data: Record<string, any>) {
     return {
       setValues,
@@ -1068,6 +1284,7 @@ export function useForm<
       focus,
       array: (path: string) => handlerArrayHelpers(path, data),
       meta: formMetadata,
+      getChanges,
     };
   }
 
@@ -1142,6 +1359,10 @@ export function useForm<
       computed,
       compute,
       getCurrentArrayValue: () => getDeepValue(formValues.current, path),
+      getKeys: () => arrayKeysRef.current[path] || [],
+      setKeys: (newKeys: string[]) => {
+        arrayKeysRef.current[path] = newKeys;
+      },
     });
   }, []);
 
@@ -1160,12 +1381,25 @@ export function useForm<
   }, []);
 
   const debug = useCallback(() => {
+    const cascadeState = {} as any;
+    const cascades = cascadeRef.current;
+    if (cascades) {
+      Object.keys(cascades).forEach((key) => {
+        cascadeState[key] = {
+          data: metaRef.current.get(`${key}.options`) ?? [],
+          isLoading: !!loadingCascades[key],
+        };
+      });
+    }
+
     return {
       values: { ...getValues() },
       errors: { ...getErrors() },
       dirty: { ...nestFormValues(dirtyFieldsRef.current) },
       touched: { ...nestFormValues(touchedFieldsRef.current) },
       computed: { ...computedFieldsRef.current },
+      meta: Object.fromEntries(metaRef.current.entries()),
+      cascade: cascadeState,
       subscriptions: {
         fields: { ...fieldSubscribersRef.current },
         errors: { ...fieldErrorSubscribersRef.current },
@@ -1175,9 +1409,70 @@ export function useForm<
         isValidated,
       },
     };
-  }, []);
+  }, [loadingCascades]);
 
-  const formMetadata = createMetaContext(metaRef, triggerRerender);
+  const formMetadata = useMemo(
+    () => createMetaContext(metaRef, triggerRerender),
+    [triggerRerender],
+  );
+
+  // -----------------------------
+  // Cascading Option Binding Subscription
+  // -----------------------------
+  useEffect(() => {
+    const cascades = cascadeRef.current;
+    if (!cascades) return;
+
+    const unsubs: (() => void)[] = [];
+
+    Object.entries(cascades).forEach(([fieldName, _config]) => {
+      const triggerCascade = async () => {
+        const latestConfig = (cascadeRef.current as any)?.[fieldName];
+        if (!latestConfig) return;
+
+        const currentValues = getValues();
+        const watchedValues = latestConfig.watch.map((p: string) =>
+          getValue(p),
+        );
+
+        setLoadingCascades((prev) => ({ ...prev, [fieldName]: true }));
+        try {
+          const resolved = await latestConfig.fn(currentValues, watchedValues);
+          formMetadata.set(`${fieldName}.options`, resolved);
+          latestConfig.onLoad?.(resolved);
+        } catch (err) {
+          console.error(
+            `Cascading options failed for field ${fieldName}:`,
+            err,
+          );
+        } finally {
+          setLoadingCascades((prev) => {
+            const next = { ...prev };
+            delete next[fieldName];
+            return next;
+          });
+        }
+      };
+
+      const initialConfig = (cascades as any)[fieldName];
+      if (initialConfig) {
+        // Subscribe to each watched field
+        initialConfig.watch.forEach((watchField: string) => {
+          const unsub = subscribe(watchField, () => {
+            void triggerCascade();
+          });
+          unsubs.push(unsub);
+        });
+
+        // Run initial load on mount
+        void triggerCascade();
+      }
+    });
+
+    return () => {
+      unsubs.forEach((unsub) => unsub());
+    };
+  }, [getValues, getValue, subscribe, formMetadata]);
 
   //initialize form
   // Intentionally depends only on defaultValues.
@@ -1195,7 +1490,259 @@ export function useForm<
     setValues,
     createHandlerContext,
     compute,
+    initialValuesRef,
   });
+
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const totalSteps = options?.steps?.length ?? 0;
+
+  const nextStep = useCallback(async () => {
+    if (!options?.steps) return true;
+    const stepFields = options.steps[currentStep];
+    if (!stepFields) return true;
+
+    const stepErrors: Record<string, string> = {};
+    let hasStepError = false;
+
+    // 1. Zod schema validation
+    if (currentSchema.current) {
+      const validate = await formValidation();
+      if (!validate.isValidated && validate.formErrors) {
+        stepFields.forEach((field) => {
+          const err = validate.formErrors?.[field as string];
+          if (err) {
+            stepErrors[field as string] = err;
+            hasStepError = true;
+          } else {
+            delete formErrors.current[field as string];
+          }
+        });
+      } else {
+        stepFields.forEach((field) => {
+          delete formErrors.current[field as string];
+        });
+      }
+    }
+
+    // 2. Custom check function
+    if (check) {
+      const checkResult = await check(getValues() as any, {
+        multiPathError,
+        focus,
+      });
+      if (checkResult) {
+        const checkErrors = checkResult as Record<string, string>;
+        stepFields.forEach((field) => {
+          const err = checkErrors[field as string];
+          if (err) {
+            stepErrors[field as string] = err;
+            hasStepError = true;
+          }
+        });
+      }
+    }
+
+    // 3. Debounced async validation checks
+    if (options?.asyncValidate) {
+      const asyncConfigs = options.asyncValidate;
+      const promises = stepFields.map(async (field) => {
+        const config = (asyncConfigs as any)[field];
+        if (!config) return;
+
+        const val = getValue(field);
+        const prevVal = getValueByPath(initialValuesRef.current, field);
+
+        setValidatingFields((prev) => ({ ...prev, [field]: true }));
+        try {
+          const err = await config.validate(val, prevVal);
+          if (err) {
+            stepErrors[field] = err;
+            hasStepError = true;
+          }
+        } catch {
+          stepErrors[field] = "Validation failed";
+          hasStepError = true;
+        } finally {
+          setValidatingFields((prev) => {
+            const next = { ...prev };
+            delete next[field];
+            return next;
+          });
+        }
+      });
+
+      await Promise.all(promises);
+    }
+
+    if (hasStepError) {
+      setErrors({ ...formErrors.current, ...stepErrors });
+      focusFirst(stepErrors);
+      return false;
+    }
+
+    // Clear step fields errors if valid
+    const cleanErrors = { ...formErrors.current };
+    stepFields.forEach((field) => {
+      delete cleanErrors[field as string];
+    });
+    setErrors(cleanErrors);
+
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep((prev) => prev + 1);
+      return true;
+    }
+
+    return true;
+  }, [
+    currentStep,
+    options?.steps,
+    check,
+    options?.asyncValidate,
+    getValues,
+    formValidation,
+    focusFirst,
+    setErrors,
+  ]);
+
+  const prevStep = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+      return true;
+    }
+    return false;
+  }, [currentStep]);
+
+  const setStep = useCallback(
+    (step: number) => {
+      if (!options?.steps) return;
+      if (step >= 0 && step < options.steps.length) {
+        setCurrentStep(step);
+      }
+    },
+    [options?.steps],
+  );
+
+  const register = useCallback(
+    <P extends Path<TDefault>>(
+      name: P,
+      options?: FieldRegistrationOptions<TDefault, P>,
+      internal?: boolean,
+    ) => {
+      // 1️⃣ Setup field metadata immediately during render (no hooks)
+      if (options) {
+        fieldRegistryRef.current[name] = options;
+
+        if (options.transform) {
+          const arr = Array.isArray(options.transform)
+            ? options.transform
+            : [options.transform];
+          fieldsTransformsRef.current.set(name, arr);
+        }
+
+        if (options.validate) {
+          fieldsValidationsRef.current.set(name, options.validate);
+        }
+
+        // handle defaultValue only when field is initially undefined
+        const currentValue = getValue(name);
+        if (options.defaultValue !== undefined && currentValue === undefined) {
+          setValue(name, options.defaultValue, { silent: true });
+        }
+      }
+
+      // 2️⃣ Event Handlers
+      const onChange = (e: any) => {
+        const val = e?.target?.value ?? e;
+        setValue(name, val);
+        touchedFieldsRef.current[name] = true;
+        dirtyFieldsRef.current[name] = true;
+
+        if (["change", "change-submit"].includes(validateOn)) {
+          validateField(name);
+        }
+      };
+
+      const onBlur = () => {
+        touchedFieldsRef.current[name] = true;
+        if (validateOn === "blur") {
+          validateField(name);
+          runAsyncValidation(name, getValue(name));
+        }
+      };
+
+      const refId = name + "-reg-" + Math.random().toString(36).substring(2, 9);
+
+      const valueProps =
+        mode === "uncontrolled"
+          ? { defaultValue: getValue(name) ?? "" }
+          : { value: getValue(name) ?? "" };
+
+      return {
+        name: name as string,
+        ...valueProps,
+        onChange,
+        onBlur,
+        "data-input-ref": refId,
+        "data-input-error": !!formErrors.current[name],
+        "aria-invalid": !!formErrors.current[name],
+        ref: (element: any) => {
+          if (element) {
+            // Save element reference id for focus()
+            fieldRefs.current[name] = refId;
+
+            if (internal) return;
+
+            // Subscribe to element value changes
+            const unsubValue = subscribe(
+              name,
+              (val) => {
+                if (element && element.value !== val) {
+                  element.value = val ?? "";
+                }
+              },
+              { internalRef: refId },
+            );
+
+            // Subscribe to element validation error changes
+            const unsubError = subscribeFieldError(name, (err) => {
+              if (element) {
+                if (err) {
+                  element.setAttribute("data-input-error", "true");
+                  element.setAttribute("aria-invalid", "true");
+                } else {
+                  element.removeAttribute("data-input-error");
+                  element.removeAttribute("aria-invalid");
+                }
+              }
+            });
+
+            // Save subscriptions for cleanup
+            registerUnsubsRef.current[refId] = [unsubValue, unsubError];
+          } else {
+            // Clean up subscriptions on unmount
+            const unsubs = registerUnsubsRef.current[refId];
+            if (unsubs) {
+              unsubs.forEach((unsub) => unsub());
+              delete registerUnsubsRef.current[refId];
+            }
+            if (fieldRefs.current[name] === refId) {
+              delete fieldRefs.current[name];
+            }
+          }
+        },
+      };
+    },
+    [
+      mode,
+      validateOn,
+      getValue,
+      setValue,
+      subscribe,
+      subscribeFieldError,
+      validateField,
+      runAsyncValidation,
+    ],
+  );
 
   const values = {
     register,
@@ -1227,6 +1774,25 @@ export function useForm<
     field,
     array,
     group,
+    steps: {
+      next: nextStep,
+      prev: () => {
+        prevStep();
+      },
+      get current() {
+        return currentStep;
+      },
+      get isFirst() {
+        return currentStep === 0;
+      },
+      get isLast() {
+        return currentStep === totalSteps - 1;
+      },
+      get total() {
+        return totalSteps;
+      },
+      set: setStep,
+    },
     get values() {
       return getValues();
     },
@@ -1235,6 +1801,9 @@ export function useForm<
     },
     submitting: isSubmitting,
     validated: isValidated,
+    isValidating,
+    validatingFields,
+    getChanges,
     isDirty,
     markDirty,
     isTouched,
@@ -1250,16 +1819,52 @@ export function useForm<
     Field,
     channel: channelBus.channel,
     meta: formMetadata,
+    get cascade() {
+      const res = {} as any;
+      const cascades = cascadeRef.current;
+      if (cascades) {
+        Object.keys(cascades).forEach((key) => {
+          res[key] = {
+            data: metaRef.current.get(`${key}.options`) ?? [],
+            isLoading: !!loadingCascades[key],
+          };
+        });
+      }
+      return res;
+    },
+    id: formIdRef.current,
   };
 
-  //@ts-ignore
-  if (id) registry.add(id, values); // synchronous
+  if (formIdRef.current) {
+    //@ts-ignore
+    registry.add(formIdRef.current, values);
+  }
 
   useEffect(() => {
     return () => {
-      if (id) registry.delete(id);
+      if (formIdRef.current) {
+        registry.delete(formIdRef.current);
+      }
     };
-  }, [id]);
+  }, []);
+
+  // Prevent accidental page refreshes or closures if form is dirty
+  useEffect(() => {
+    if (!preventUnload) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty()) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [preventUnload, isDirty]);
 
   //@ts-ignore
   return values;

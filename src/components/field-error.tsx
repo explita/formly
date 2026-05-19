@@ -7,7 +7,7 @@ export function FieldError() {
   if (!message) return null;
 
   return (
-    <p data-error="true" style={{ color: "red", fontSize: "0.75rem" }}>
+    <p className="field-error" data-error="true">
       {message}
     </p>
   );

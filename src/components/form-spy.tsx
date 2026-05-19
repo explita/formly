@@ -1,5 +1,5 @@
 import React, { JSX, ReactNode, useEffect, useRef, useState } from "react";
-import { FormContextValue } from "../providers/form.js";
+import { FormInstance } from "../types/utils.js";
 import { Path, PathValue } from "../types/path.js";
 
 // Overload 1: select is provided
@@ -7,11 +7,11 @@ export function FormSpy<
   DefaultValues extends Record<string, any>,
   P extends Path<DefaultValues>,
 >({
-  form,
+  use,
   watch,
   render,
 }: {
-  form: FormContextValue<undefined, DefaultValues>;
+  use: FormInstance<DefaultValues, any, any>;
   render: (selected: PathValue<DefaultValues, P>) => ReactNode;
   watch: P;
 }): JSX.Element;
@@ -21,10 +21,10 @@ export function FormSpy<
   DefaultValues extends Record<string, any>,
   P extends Path<DefaultValues>,
 >({
-  form,
+  use,
   render,
 }: {
-  form: FormContextValue<undefined, DefaultValues>;
+  use: FormInstance<DefaultValues, any, any>;
   render: (selected: DefaultValues) => ReactNode;
 }): JSX.Element;
 
@@ -32,14 +32,15 @@ export function FormSpy<
   DefaultValues extends Record<string, any>,
   P extends Path<DefaultValues>,
 >({
-  form,
+  use,
   watch,
   render,
 }: {
-  form: FormContextValue<undefined, DefaultValues>;
+  use: FormInstance<DefaultValues, any, any>;
   watch?: P;
   render: (selected: PathValue<DefaultValues, P>) => ReactNode;
 }) {
+  const form = use;
   const [selected, setSelected] = useState(() =>
     watch ? form.field(watch).get() : form.values,
   ) as any;
@@ -63,15 +64,15 @@ export function FormSpy<
 }
 
 export function FormSpyDebug<DefaultValues extends Record<string, any>>({
-  form,
+  use,
   watch,
 }: {
-  form: FormContextValue<undefined, DefaultValues>;
+  use: FormInstance<DefaultValues, any, any>;
   watch?: Path<DefaultValues>;
 }) {
   return (
     <FormSpy
-      form={form}
+      use={use}
       //@ts-ignore
       watch={watch}
       render={(v) => (

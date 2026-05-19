@@ -29,6 +29,11 @@ export type ArrayHelpers<T> = {
   value: T[];
   toObject: () => Record<number, T>;
   /**
+   * Persistent, unique string keys specifically generated for each item in the array to safely bind to React's `key={}` prop.
+   * Works perfectly with arrays of primitive values (e.g. `string[]`, `number[]`) and object lists alike!
+   */
+  keys: string[];
+  /**
    * Returns the length of the array for the specified path.
    * @returns The length of the array for the specified path.
    */
@@ -185,6 +190,8 @@ export type ArrayHelperProps<T> = {
   computed?: Computed<T>;
   compute: Compute<T>;
   getCurrentArrayValue: () => T[];
+  getKeys: () => string[];
+  setKeys: (keys: string[]) => void;
 };
 
 export type HandlerArrayHelpers<T> = {

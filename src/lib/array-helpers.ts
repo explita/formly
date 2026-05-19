@@ -18,10 +18,25 @@ export function formArrayHelper<T = any>(
     compute,
     computed,
     getCurrentArrayValue,
+    getKeys,
+    setKeys,
   } = props;
 
   function get() {
     return getCurrentArrayValue() || [];
+  }
+
+  // Auto-initialize keys if not matching the current list length
+  const currentLength = get().length;
+  let initialKeys = [...getKeys()];
+  if (initialKeys.length !== currentLength) {
+    while (initialKeys.length < currentLength) {
+      initialKeys.push(generateArrayKey());
+    }
+    if (initialKeys.length > currentLength) {
+      initialKeys.length = currentLength;
+    }
+    setKeys(initialKeys);
   }
 
   let working = [...get()];
@@ -45,10 +60,14 @@ export function formArrayHelper<T = any>(
   }
 
   function remove(index: number) {
+    const currentKeys = [...getKeys()];
+    currentKeys.splice(index, 1);
+    setKeys(currentKeys);
     removeArrayItem(formValues, setValues, path, index);
   }
 
   function clear() {
+    setKeys([]);
     clearArray(formValues, setValues, path);
   }
 
@@ -60,11 +79,25 @@ export function formArrayHelper<T = any>(
     get length() {
       return get().length;
     },
+    get keys() {
+      return getKeys();
+    },
 
     filter(fn) {
-      const filtered = get().filter(fn);
+      const currentKeys = [...getKeys()];
+      const keptIndexes: number[] = [];
+      const filtered = get().filter((item, index) => {
+        const keep = fn(item, index);
+        if (keep) {
+          keptIndexes.push(index);
+        }
+        return keep;
+      });
       working = filtered;
       set(filtered);
+
+      const newKeys = keptIndexes.map((idx) => currentKeys[idx]);
+      setKeys(newKeys);
       return api;
     },
     map(fn) {
@@ -77,6 +110,9 @@ export function formArrayHelper<T = any>(
     replaceAll: (value) => {
       set(value);
       working = [...value];
+
+      const newKeys = value.map(() => generateArrayKey());
+      setKeys(newKeys);
       return api;
     },
     push(items) {
@@ -86,6 +122,12 @@ export function formArrayHelper<T = any>(
       const combined = [...oldValues, ...newValues];
       working = combined;
       set(combined);
+
+      const currentKeys = [...getKeys()];
+      newValues.forEach(() => {
+        currentKeys.push(generateArrayKey());
+      });
+      setKeys(currentKeys);
 
       const startIndex = oldValues.length;
 
@@ -97,11 +139,19 @@ export function formArrayHelper<T = any>(
     insert: (index, item) => {
       working.splice(index, 0, item);
       set(working);
+
+      const currentKeys = [...getKeys()];
+      currentKeys.splice(index, 0, generateArrayKey());
+      setKeys(currentKeys);
       return api;
     },
     insertFirst: (item) => {
       working.unshift(item);
       set(working);
+
+      const currentKeys = [...getKeys()];
+      currentKeys.unshift(generateArrayKey());
+      setKeys(currentKeys);
       return api;
     },
 
@@ -117,12 +167,21 @@ export function formArrayHelper<T = any>(
     swap: (a, b) => {
       [working[a], working[b]] = [working[b], working[a]];
       set(working);
+
+      const currentKeys = [...getKeys()];
+      [currentKeys[a], currentKeys[b]] = [currentKeys[b], currentKeys[a]];
+      setKeys(currentKeys);
       return api;
     },
     move: (from, to) => {
       const [item] = working.splice(from, 1);
       working.splice(to, 0, item);
       set(working);
+
+      const currentKeys = [...getKeys()];
+      const [key] = currentKeys.splice(from, 1);
+      currentKeys.splice(to, 0, key);
+      setKeys(currentKeys);
       return api;
     },
 
@@ -137,10 +196,20 @@ export function formArrayHelper<T = any>(
     },
 
     compact() {
-      const filtered = get().filter(Boolean);
+      const currentKeys = [...getKeys()];
+      const keptIndexes: number[] = [];
+      const filtered = get().filter((item, index) => {
+        const keep = !!item;
+        if (keep) {
+          keptIndexes.push(index);
+        }
+        return keep;
+      });
       working = filtered;
       set(filtered);
 
+      const newKeys = keptIndexes.map((idx) => currentKeys[idx]);
+      setKeys(newKeys);
       return api;
     },
 
@@ -156,6 +225,15 @@ export function formArrayHelper<T = any>(
       working = newValues;
       set(newValues);
 
+      const currentKeys = [...getKeys()];
+      while (currentKeys.length < newValues.length) {
+        currentKeys.push(generateArrayKey());
+      }
+      if (currentKeys.length > newValues.length) {
+        currentKeys.length = newValues.length;
+      }
+      setKeys(currentKeys);
+
       const startIndex = oldValues.length;
 
       //@ts-ignore
@@ -164,19 +242,37 @@ export function formArrayHelper<T = any>(
       return api;
     },
     sort(fn) {
-      const sorted = [...get()].sort(fn);
-      working = sorted;
-      set(sorted);
+      const arr = get();
+      const currentKeys = [...getKeys()];
 
+      const indexed = arr.map((item, idx) => ({ item, key: currentKeys[idx] }));
+      indexed.sort((a, b) => fn(a.item, b.item));
+
+      const sortedItems = indexed.map((x) => x.item);
+      const sortedKeys = indexed.map((x) => x.key);
+
+      working = sortedItems;
+      set(sortedItems);
+      setKeys(sortedKeys);
       return api;
     },
 
     remove,
     removeIf(fn) {
-      const filtered = get().filter((item, index) => !fn(item, index));
+      const currentKeys = [...getKeys()];
+      const keptIndexes: number[] = [];
+      const filtered = get().filter((item, index) => {
+        const keep = !fn(item, index);
+        if (keep) {
+          keptIndexes.push(index);
+        }
+        return keep;
+      });
       working = filtered;
       set(filtered);
 
+      const newKeys = keptIndexes.map((idx) => currentKeys[idx]);
+      setKeys(newKeys);
       return api;
     },
     clear,
@@ -195,10 +291,6 @@ export function formArrayHelper<T = any>(
     isLast: (index) => index === get().length - 1,
     first: () => get()[0],
     last: () => get()[get().length - 1],
-
-    // done() {
-    //   set(working);
-    // },
   };
 
   return api;
@@ -360,4 +452,8 @@ export function extraxtArrayPrefixies(
       return dep; // global deps stay as-is
     }) || []
   );
+}
+
+function generateArrayKey(length = 9) {
+  return `key-${Math.random().toString(36).substring(2, length)}`;
 }

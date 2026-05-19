@@ -17,9 +17,11 @@ export function useFormContext<
 
   // Handle schema updates if provided
   useEffect(() => {
-    //@ts-ignore
-    form.setSchema(props?.schema);
-  }, [props?.schema]);
+    if (props && "schema" in props) {
+      //@ts-ignore
+      form.setSchema(props.schema);
+    }
+  }, [props && "schema" in props ? props.schema : undefined]);
 
   return form;
 }

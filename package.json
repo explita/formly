@@ -1,6 +1,6 @@
 {
   "name": "@explita/formly",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "A lightweight form toolkit for React built with developer ergonomics in mind. Includes a flexible Form component, `useForm`, `useField`, and `useFormContext` hooks for managing form state and validation with ease. Designed to simplify complex forms while remaining unopinionated and extensible.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,9 +12,17 @@
       "default": "./dist/utils/index.js"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/explita/formly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/explita/formly/issues"
+  },
+  "homepage": "https://github.com/explita/formly#readme",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "npm run clean && tsc",
+    "build": "node scripts/gen-version.js && npm run clean && tsc",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -39,6 +47,7 @@
   "type": "module",
   "sideEffects": false,
   "devDependencies": {
+    "@types/node": "^25.8.0",
     "@types/react": "^19",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
@@ -46,6 +55,11 @@
   "peerDependencies": {
     "react": "^19",
     "zod": "^4"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
   },
   "files": [
     "dist",

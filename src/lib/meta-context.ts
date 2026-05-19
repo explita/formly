@@ -1,6 +1,6 @@
 export function createMetaContext(
   metaRef: React.RefObject<Map<string, unknown>>,
-  triggerRerender: () => void
+  triggerRerender: () => void,
 ) {
   return {
     get<T = unknown>(key: string): T | undefined {
@@ -8,10 +8,11 @@ export function createMetaContext(
     },
     set(key: string, value: unknown, opts?: { silent?: boolean }) {
       metaRef.current.set(key, value);
-      if (!opts?.silent) triggerRerender();
+      if (!opts?.silent) setTimeout(triggerRerender, 10);
     },
     delete(key: string) {
       metaRef.current.delete(key);
+      setTimeout(triggerRerender, 10);
     },
     has(key: string) {
       return metaRef.current.has(key);
@@ -24,6 +25,7 @@ export function createMetaContext(
     },
     clear() {
       metaRef.current.clear();
+      setTimeout(triggerRerender, 10);
     },
   };
 }

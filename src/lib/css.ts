@@ -39,4 +39,24 @@ export const css = `.explita-form .form-label {
   // outline: none !important;
   outline-color: #ef4444;
 }
+
+/* Field Error messaging and animation */
+.explita-form .field-error {
+  color: #ef4444; /* red-500 */
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1rem;
+  margin-top: 0.25rem;
+  animation: formly-slide-in 200ms ease-out forwards;
+}
+
+@keyframes formly-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem); /* slide-in-from-top-1 (-4px) */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 `;

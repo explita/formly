@@ -2,11 +2,30 @@ import { FormInstance } from "../types/utils.js";
 
 class FormRegistry {
   private forms = new Map<string, FormInstance<any>>();
+  private listeners = new Set<() => void>();
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notify() {
+    setTimeout(() => {
+      this.listeners.forEach((l) => l());
+    }, 0);
+  }
 
   add<T>(id: string, form: FormInstance<T>) {
+    const isNew = !this.forms.has(id);
     this.forms.set(id, form);
+    if (isNew) {
+      this.notify();
+    }
     return () => {
       this.forms.delete(id);
+      this.notify();
     };
   }
 
@@ -18,6 +37,15 @@ class FormRegistry {
 
   delete(id: string) {
     this.forms.delete(id);
+    this.notify();
+  }
+
+  has(id: string): boolean {
+    return this.forms.has(id);
+  }
+
+  getAll(): Array<[string, FormInstance<any>]> {
+    return Array.from(this.forms.entries());
   }
 }
 

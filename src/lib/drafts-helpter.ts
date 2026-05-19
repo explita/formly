@@ -1,6 +1,8 @@
 import { debounce } from "./debounce.js";
 
 function getDrafts(): Record<string, unknown> {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return {};
+
   const stored = localStorage.getItem("drafts");
   if (!stored) return {};
 
@@ -13,6 +15,8 @@ function getDrafts(): Record<string, unknown> {
 }
 
 function setDrafts(drafts: Record<string, unknown>): void {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return;
+
   if (Object.keys(drafts).length === 0) {
     localStorage.removeItem("drafts");
   } else {

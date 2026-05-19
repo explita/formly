@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-05-19
+
+### Added
+
+- **Interactive DevTools Inspector**: Added a zero-setup, floating interactive DevTools inspector that automatically mounts inside development environments. Includes:
+  - Live nested value tree viewer and copy helper.
+  - Live patch diffing payload representation (`getChanges()`).
+  - Active validation errors, flat dirty path lists, touched trackers, metadata map, and dropdown loading states.
+  - Interactive Action Panel to manually trigger validations, resets, step routing, or state overrides.
+- **Cascading Dropdowns (`cascade`)**: Declarative selector relationships that automatically fetch and options-bind choices upon dependency updates with full TypeScript autocompletion.
+- **Accidental Navigation Prevention (`preventUnload`)**: Option to automatically block page reloads, tab closures, and accidental browser route changes when the form has unsaved/dirty state.
+- **Input Normalization & Auto-Formatters (`normalize`)**: Real-time value sanitization and formatting directly on user keystrokes (e.g. UPPERCASING, phone digit formatting, spacing, etc.).
+- **Precise Delta Tracking (`getChanges`)**: Helper to extract and submit only modified fields compared to the initial payload, keeping API requests lightweight.
+- **Wizard & Multi-Step Forms (`steps`)**: Multi-step configuration with native step-by-step layout tracking, step-level schema/custom validation, and navigation utilities (`nextStep`, `prevStep`, `currentStep`, etc.).
+- **Auto-Keyed Dynamic Arrays**: Automatically generated parallel persistent unique keys (`keys` array) to avoid rendering bugs and enable smooth animation list transitions.
+- **Live Playground**: Configured and deployed the examples website to [formly.explita.ng](https://formly.explita.ng) and linked it in the documentation.
+- **Optional Zod Support**: Marked `zod` as an optional peer dependency, allowing developer setups to run without schema validations if desired.
+
+### Fixed
+
+- **React 19 StrictMode warnings**: Resolved "Cannot update component while rendering" errors in FormRegistry by deferring state updates with `setTimeout`
+- **Computed field double-renders**: Fixed redundant initial render cycles during dependency subscription setup
+
+### Changed
+
+- **Zod to optional peer dependency** - Reduces bundle size for non-Zod users
+- **FormRegistry state updates** - Deferred to macro-task queue for React 19 compat
+
 ## [0.1.4] - 2026-03-25
 
 ### Added

@@ -6,27 +6,38 @@ import { FieldHelpers } from "./field.js";
 import { createFormBus } from "../lib/pub-sub.js";
 import { ReactElement, JSX } from "react";
 
-export type FormShape<F> = F extends FormInstance<infer T> ? T : never;
+type MaybePromise<T> = T | Promise<T>;
+
+export type FormShape<F> =
+  F extends FormInstance<infer T, any> ? Prettify<T> : never;
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
 
-export type FormValues<
+export type FormOptions<
   TSchema extends z.ZodObject | undefined = undefined,
   DefaultValues = TSchema extends undefined
     ? Record<string, any>
     : Partial<z.infer<TSchema>>,
   TComputed extends Record<string, any> = {},
-> = FormOptions<TSchema, DefaultValues, TComputed>;
+  TAsyncValidation extends Record<string, any> = {},
+  TCascade extends Record<string, any> = {},
+  TSteps extends
+    | Array<Array<Path<SchemaType<TSchema, DefaultValues>>>>
+    | undefined = undefined,
+> = FormOptionsInternal<
+  TSchema,
+  DefaultValues,
+  TComputed,
+  TAsyncValidation,
+  TCascade,
+  TSteps
+>;
 
 export type SchemaType<TSchema, TValues> =
   TSchema extends ZodObject<any> ? z.infer<TSchema> : TValues;
 
-export type InferComputed<T> = Prettify<{
-  [K in keyof T]: T[K] extends { fn: (...args: any[]) => infer R }
-    ? R
-    : unknown;
-}>;
+export type InferComputed<T> = T;
 export type InputValue = string | undefined;
 
 export type InputEvent = React.FormEvent<
@@ -110,6 +121,7 @@ export type HandlerContext<T> = {
   focus: (name: Path<T>) => void;
   array: <P extends Path<T>>(path: P) => HandlerArrayHelpers<ArrayItem<T, P>>;
   meta: FormMeta;
+  getChanges: () => Partial<T>;
 };
 
 type ReadyContext<T> = {
@@ -126,7 +138,18 @@ export type FormMeta = {
   clear: () => void;
 };
 
-export type FormInstance<T> = {
+export type InferCascade<TCascade> = TCascade;
+
+export type FormInstance<
+  T,
+  TAsyncValidation extends Record<string, any> = {},
+  TCascade extends Record<string, any> = {},
+  TSteps extends Array<Array<Path<T>>> | undefined = undefined,
+> = {
+  /**
+   * The unique identifier of this form instance.
+   */
+  id: string;
   /**
    * Indicates whether the form is currently submitting.
    */
@@ -135,6 +158,29 @@ export type FormInstance<T> = {
    * Indicates whether the form is validated.
    */
   validated: boolean;
+  /**
+   * Indicates whether any debounced async validation is currently running.
+   */
+  isValidating: boolean;
+  /**
+   * Mapping of which specific field paths are currently running async validations.
+   */
+  validatingFields: [keyof TAsyncValidation] extends [never]
+    ? Record<string, boolean>
+    : Record<keyof TAsyncValidation, boolean>;
+  /**
+   * Mapping of cascading options and loading states resolved for each field path.
+   */
+  cascade: {
+    [K in keyof TCascade]: {
+      data: TCascade[K];
+      isLoading: boolean;
+    };
+  };
+  /**
+   * Retrieves a patch containing only form values that were modified compared to defaultValues.
+   */
+  getChanges: () => Partial<T>;
   /**
    * Retrieves the current values of the form.
    */
@@ -219,18 +265,18 @@ export type FormInstance<T> = {
    * @returns A function that can be used as a form's `onSubmit` handler.
    */
   handleSubmit: (
-    onValid: (data: T, ctx: HandlerContext<T>) => void | Promise<void>,
-  ) => (event: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
+    onValid: (data: T, ctx: HandlerContext<T>) => MaybePromise<void>,
+  ) => (event: React.FormEvent<HTMLFormElement>) => MaybePromise<void>;
   /**
    * A utility function to register a form field.
    *
    * @param name - The name of the form field to register.
    * @returns An object containing the form field properties.
    */
-  register: <P extends Path<T>>(
-    name: P,
-    options?: FieldRegistrationOptions<T, P>,
-  ) => FieldRegistration<PathValue<T, P>>;
+  // register: <P extends Path<T>>(
+  //   name: P,
+  //   options?: FieldRegistrationOptions<T, P>,
+  // ) => FieldRegistration<PathValue<T, P>>;
   /**
    * A utility function to access and modify a specific form field.
    *
@@ -324,6 +370,44 @@ export type FormInstance<T> = {
   Field: <P extends Path<T>>(props: FieldProps<T, P>) => JSX.Element;
   channel: ReturnType<typeof createFormBus<T>>["channel"];
   meta: FormMeta;
+
+  /**
+   * Formly Wizard Steps API. Intelligent multi-step state navigator.
+   */
+  steps: TSteps extends Array<Array<Path<T>>>
+    ? {
+        /**
+         * Validates the fields in the current active step and advances to the next step if they are valid.
+         * @returns A promise resolving to a boolean indicating whether the step was advanced successfully.
+         */
+        next: () => Promise<boolean>;
+        /**
+         * Navigates back to the previous step index safely.
+         */
+        prev: () => void;
+        /**
+         * The active step index (0-indexed).
+         */
+        current: number;
+        /**
+         * Indicates whether the current active step is the first step.
+         */
+        isFirst: boolean;
+        /**
+         * Indicates whether the current active step is the last step.
+         */
+        isLast: boolean;
+        /**
+         * The total number of wizard steps defined.
+         */
+        total: number;
+        /**
+         * Explicitly sets the active step index.
+         * @param step - The 0-indexed step index to set.
+         */
+        set: (step: number) => void;
+      }
+    : undefined;
 };
 
 export type SetValues<T> = (
@@ -335,10 +419,14 @@ export type SetErrors<T> = (
   errors?: Partial<Record<Path<T>, string>> | z.ZodError["issues"],
 ) => void;
 
-export type FormOptions<
+export type FormOptionsInternal<
   TSchema extends ZodObject<any> | undefined,
   TValues,
   TComputed extends Record<string, any> = {},
+  TAsyncValidation extends Record<string, any> = {},
+  TCascade extends Record<string, any> = {},
+  TSteps extends Array<Array<Path<SchemaType<TSchema, TValues>>>> | undefined =
+    undefined,
 > = {
   /**
    * The schema to use for validation.
@@ -359,31 +447,40 @@ export type FormOptions<
   /**
    * The check function to use for checking the form.
    */
-  check?: CheckFn<SchemaType<TSchema, TValues>>;
+  check?: CheckFn<
+    Prettify<SchemaType<TSchema, TValues> & InferComputed<TComputed>>
+  >;
   /**
    * The computed fields of the form.
    */
   computed?: {
     [K in keyof TComputed]: {
-      deps?: Path<SchemaType<TSchema, TValues>>[];
-      fn: (values: SchemaType<TSchema, TValues>, index: number) => unknown;
+      deps?: (
+        | Path<SchemaType<TSchema, TValues>>
+        | (string & {})
+        | number
+        | boolean
+      )[];
+      fn: (values: SchemaType<TSchema, TValues>, index: number) => TComputed[K];
     };
-  } & TComputed;
+  };
   /**
    * The submit handler of the form.
    */
   onSubmit?: (
-    values: SchemaType<TSchema, TValues> & InferComputed<TComputed>,
+    values: Prettify<SchemaType<TSchema, TValues> & InferComputed<TComputed>>,
     ctx: HandlerContext<
-      SchemaType<TSchema, TValues> & InferComputed<TComputed>
+      Prettify<SchemaType<TSchema, TValues> & InferComputed<TComputed>>
     >,
   ) => void;
   /**
    * Called when the form is ready/mounted.
    */
   onReady?: (
-    values: SchemaType<TSchema, TValues> & InferComputed<TComputed>,
-    ctx: ReadyContext<SchemaType<TSchema, TValues> & InferComputed<TComputed>>,
+    values: Prettify<SchemaType<TSchema, TValues> & InferComputed<TComputed>>,
+    ctx: ReadyContext<
+      Prettify<SchemaType<TSchema, TValues> & InferComputed<TComputed>>
+    >,
   ) => void;
   /**
    * The mode of the form.
@@ -415,6 +512,54 @@ export type FormOptions<
    * Whether to use the saved form state first.
    */
   savedFormFirst?: boolean;
+  /**
+   * Whether to prevent page unload (reloads, tab close, navigation) if the form is dirty.
+   */
+  preventUnload?: boolean;
+  /**
+   * Declarative normalizers to intercept and format/sanitize input values as they are typed.
+   */
+  normalize?: Partial<{
+    [P in Path<SchemaType<TSchema, TValues>>]: (
+      value: PathValue<SchemaType<TSchema, TValues>, P>,
+      previousValue: PathValue<SchemaType<TSchema, TValues>, P> | undefined,
+    ) => PathValue<SchemaType<TSchema, TValues>, P>;
+  }>;
+  /**
+   * Race-condition safe debounced async validation (e.g. unique username checks, remote coupon codes).
+   */
+  asyncValidate?: {
+    [P in keyof TAsyncValidation]: P extends Path<SchemaType<TSchema, TValues>>
+      ? {
+          /**
+           * The debounce time in milliseconds.
+           * @default 500
+           */
+          debounce?: number;
+          /**
+           * The async validation function.
+           */
+          validate: (
+            value: PathValue<SchemaType<TSchema, TValues>, P>,
+            prevValue: PathValue<SchemaType<TSchema, TValues>, P> | undefined,
+          ) => Promise<string | undefined | null>;
+        }
+      : never;
+  };
+  /**
+   * Cascading dropdown bindings to automatically load options list based on other fields changing.
+   * Options are automatically stored in formMetadata under `${fieldName}.options` (e.g. `form.meta.get("city.options")`).
+   */
+  cascade?: {
+    [K in keyof TCascade]: CascadeField<
+      SchemaType<TSchema, TValues>,
+      TCascade[K]
+    >;
+  };
+  /**
+   * Groupings of field paths representing steps in a wizard/multi-step form.
+   */
+  steps?: TSteps; // Array<Array<Path<SchemaType<TSchema, TValues>>>>;
 };
 
 type CheckFn<T> = (
@@ -423,10 +568,7 @@ type CheckFn<T> = (
     multiPathError: (paths: Path<T>[], message: string) => void;
     focus: (name: Path<T>) => void;
   },
-) =>
-  | Promise<Partial<Record<Path<T>, string>> | void>
-  | Partial<Record<Path<T>, string>>
-  | void;
+) => MaybePromise<Partial<Record<Path<T>, string>> | void>;
 
 type MapErrors = <E extends Record<string, any>>(
   errObj: E,
@@ -435,13 +577,21 @@ type MapErrors = <E extends Record<string, any>>(
 
 export type Compute<T> = <P extends Path<T>>(
   name: string,
-  depsOrFn: P[] | ((values: T, index: number) => any),
+  depsOrFn:
+    | (Path<T> | (string & {}) | any)[]
+    | ((values: T, index: number) => any),
   maybeFn?: (values: T, index: number) => any,
 ) => void;
 
 export type ComputedField<T, R = unknown> = {
-  deps?: Path<T>[];
+  deps?: (Path<T> | (string & {}) | any)[];
   fn: (values: T, index: number) => R;
+};
+
+export type CascadeField<T, R = unknown> = {
+  watch: (Path<T> | (string & {}))[];
+  fn: (currentValues: T, watchedValues: any[]) => MaybePromise<R>;
+  onLoad?: (options: NoInfer<R>) => void;
 };
 
 export type Computed<T> = ComputedField<T>;
@@ -484,7 +634,13 @@ export type UseFormInitializationProps = {
     }
   >;
 
-  compute: (key: string, deps: string[], fn: (values: any) => any) => void;
+  compute: (
+    key: string,
+    deps: string[],
+    fn: (values: any, index?: number) => any,
+    index?: number,
+    opts?: { silent?: boolean },
+  ) => void;
 
   draftListeners: React.RefObject<{
     restore?: (values: any) => void;
@@ -498,5 +654,6 @@ export type UseFormInitializationProps = {
     silent?: boolean,
   ) => void;
 
+  initialValuesRef?: React.RefObject<any>;
   createHandlerContext: (values: Record<string, any>) => any;
 };
