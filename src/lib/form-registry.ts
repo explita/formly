@@ -11,7 +11,7 @@ class FormRegistry {
     };
   }
 
-  private notify() {
+  notify() {
     setTimeout(() => {
       this.listeners.forEach((l) => l());
     }, 0);

@@ -148,7 +148,7 @@ export function CrossFieldCheckExample() {
                 name="password"
                 hideError={true}
                 render={(props, { hasError, error }) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label>New Password</Label>
                     <div className="relative">
                       <Input
@@ -193,7 +193,7 @@ export function CrossFieldCheckExample() {
                         {error}
                       </p>
                     )}
-                  </div>
+                  </>
                 )}
               />
 
@@ -201,7 +201,7 @@ export function CrossFieldCheckExample() {
                 name="confirmPassword"
                 hideError={true}
                 render={(props, { hasError, error }) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label>Confirm Password</Label>
                     <div className="relative">
                       <Input
@@ -225,7 +225,7 @@ export function CrossFieldCheckExample() {
                         {error}
                       </p>
                     )}
-                  </div>
+                  </>
                 )}
               />
             </div>

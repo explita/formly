@@ -1,5 +1,7 @@
 import React from "react";
 
+export const STORAGE_KEY = "__formly_devtools_state__";
+
 // Helper to flatten nested object keys
 export function getFlatPaths(obj: any, prefix = ""): string[] {
   if (typeof obj !== "object" || obj === null) return [];
@@ -82,11 +84,23 @@ export function renderStyles() {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .formly-devtools-panel.bottom-right { bottom: 40px; right: 20px; }
-      .formly-devtools-panel.bottom-left { bottom: 40px; left: 20px; }
-      .formly-devtools-panel.top-right { top: 40px; right: 20px; }
-      .formly-devtools-panel.top-left { top: 40px; left: 20px; }
+      .formly-devtools-panel.dragging {
+        transition: none !important;
+      }
+      .formly-devtools-panel.bottom-right { bottom: 20px; right: 20px; }
+      .formly-devtools-panel.bottom-left { bottom: 20px; left: 20px; }
+      .formly-devtools-panel.top-right { top: 20px; right: 20px; }
+      .formly-devtools-panel.top-left { top: 20px; left: 20px; }
+
+      .formly-devtools-fab.boundary-parent {
+        position: absolute !important;
+      }
+      .formly-devtools-panel.boundary-parent {
+        position: absolute !important;
+        max-height: calc(100% - 40px) !important;
+      }
 
       .formly-devtools-header {
         display: flex;
@@ -96,6 +110,7 @@ export function renderStyles() {
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         cursor: move;
         user-select: none;
+        white-space: nowrap;
       }
       .formly-devtools-title {
         display: flex;
@@ -122,6 +137,29 @@ export function renderStyles() {
       }
       .formly-devtools-close:hover {
         color: #ffffff;
+      }
+
+      .formly-devtools-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .formly-devtools-reset {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 15px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+      }
+      .formly-devtools-reset:hover {
+        color: #ffffff;
+        transform: rotate(-45deg);
       }
 
       .formly-devtools-tabs {
@@ -231,6 +269,11 @@ export function renderStyles() {
       .formly-devtools-btn:hover {
         background: rgba(255, 255, 255, 0.15);
         border-color: rgba(255, 255, 255, 0.2);
+      }
+      .formly-devtools-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
       }
       .formly-devtools-btn.primary {
         background: #6366f1;
@@ -376,7 +419,7 @@ export function renderStyles() {
         display: inline-flex;
         align-items: center;
         margin-left: 12px;
-        max-width: 150px;
+        max-width: 90px;
       }
       .formly-devtools-select {
         background: rgba(15, 23, 42, 0.6);
@@ -456,6 +499,301 @@ export function renderStyles() {
       }
       .formly-devtools-footer-divider {
         color: rgba(255, 255, 255, 0.08);
+      }
+
+      /* Inspect button */
+      .formly-devtools-inspect {
+        background: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        border-radius: 6px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        padding: 0;
+        font-size: 12px;
+      }
+      .formly-devtools-inspect:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+      .formly-devtools-inspect.active {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        border-color: #6366f1;
+        box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+      }
+
+      /* Inspector Banner */
+      .formly-inspect-banner {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid #6366f1;
+        color: #f8fafc;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 500;
+        z-index: 999999;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        backdrop-filter: blur(8px);
+        pointer-events: auto;
+      }
+      .formly-inspect-banner-btn {
+        background: #ef4444;
+        border: none;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-left: 8px;
+        transition: background 0.15s ease;
+      }
+      .formly-inspect-banner-btn:hover {
+        background: #dc2626;
+      }
+
+      /* Timeline tab styling */
+      .timeline-pane {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-shrink: 0;
+      }
+      .formly-timeline-filter-bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 0 0 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
+        margin-bottom: 10px;
+      }
+      .formly-timeline-search {
+        flex: 1;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+        color: #f8fafc;
+        outline: none;
+        transition: all 0.15s ease;
+      }
+      .formly-timeline-search:focus {
+        border-color: #6366f1;
+        background: rgba(15, 23, 42, 0.7);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      }
+      .formly-timeline-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: #94a3b8;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        font-weight: 500;
+        transition: color 0.15s ease;
+      }
+      .formly-timeline-checkbox-label:hover {
+        color: #ffffff;
+      }
+      .formly-timeline-checkbox {
+        accent-color: #6366f1;
+        cursor: pointer;
+      }
+      .formly-timeline-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .formly-timeline-count {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #94a3b8;
+        padding: 1px 6px;
+        border-radius: 9999px;
+        font-size: 10px;
+      }
+      .formly-timeline-list-container {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 4px;
+        min-height: 0;
+      }
+      .formly-timeline-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-bottom: 24px;
+      }
+      .formly-timeline-item {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        padding: 10px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+      .formly-timeline-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+      .formly-timeline-item-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+      .formly-timeline-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-family: monospace;
+      }
+      .formly-timeline-badge.init { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+      .formly-timeline-badge.value { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+      .formly-timeline-badge.error-add { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+      .formly-timeline-badge.error-remove { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+      .formly-timeline-badge.step { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+      .formly-timeline-badge.submitting { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+      .formly-timeline-badge.validating { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+      .formly-timeline-time {
+        font-size: 10px;
+        color: #475569;
+        font-family: monospace;
+      }
+      .formly-timeline-msg {
+        font-size: 12px;
+        color: #cbd5e1;
+        word-break: break-all;
+        line-height: 1.4;
+      }
+      .formly-timeline-item-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-top: 4px;
+      }
+      .formly-timeline-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .formly-timeline-action-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        font-size: 10px;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: all 0.15s ease;
+      }
+      .formly-timeline-action-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+      }
+      .formly-timeline-action-btn.restore:hover {
+        color: #38bdf8;
+      }
+      .formly-timeline-detail-view {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.06);
+        max-height: 150px;
+        overflow-y: auto;
+      }
+      .formly-timeline-snapshot-title {
+        font-size: 9px;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      /* State (Import/Export) Tab styling */
+      .state-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-bottom: 12px;
+        height: 100%;
+      }
+      .formly-state-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .formly-state-export-pre {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 11px;
+        color: #38bdf8;
+        max-height: 120px;
+        overflow-y: auto;
+        margin: 0;
+      }
+      .formly-state-import-textarea {
+        width: 100%;
+        height: 80px;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px;
+        color: #ffffff;
+        font-family: monospace;
+        font-size: 11px;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+      .formly-state-import-textarea:focus {
+        border-color: #6366f1;
+        outline: none;
+      }
+      .formly-state-status {
+        margin-top: 8px;
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        animation: fadeIn 0.15s ease-out;
+      }
+      .formly-state-status.error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #f87171;
+      }
+      .formly-state-status.success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: #34d399;
       }
     `,
       }}

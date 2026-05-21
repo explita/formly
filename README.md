@@ -381,6 +381,7 @@ return (
 | `persistKey`       | `string`                                            | `undefined`       | Storage key to backup/restore form drafts (falls back to `id`).                 |
 | `autoFocusOnError` | `boolean`                                           | `true`            | Programmatically focuses the first invalid input element on validation failure. |
 | `savedFormFirst`   | `boolean`                                           | `true`            | Prioritizes local storage draft restoration over `defaultValues`.               |
+| `preventUnload`    | `boolean`                                           | `false`           | Blocks page refreshes, tab closures, and navigation when the form is dirty.      |
 | `normalize`        | `Record<string, (value, prev) => any>`              | `undefined`       | Declarative normalizers to format input values in real-time as users type.      |
 | `asyncValidate`    | `Record<string, AsyncValidator>`                    | `undefined`       | Race-condition safe debounced async validators (e.g. database checks).          |
 | `cascade`          | `Record<string, CascadeField>`                      | `undefined`       | Cascading options selectors that reactively resolve choices based on deps.      |
@@ -409,7 +410,7 @@ return (
 | `setErrors(errors)`         | `Function`       | Sets multiple validation errors manually.                                              |
 | `validate()`                | `Function`       | Triggers a full form validation cycle manually.                                        |
 | `validatePartial(values)`   | `Function`       | Validates a partial set of values using the schema.                                    |
-| `reset(values?)`            | `Function`       | Resets the form back to initial values or new custom values.                           |
+| `reset()`                   | `Function`       | Resets the form back to its initial default values.                                     |
 | `handleSubmit(onValid)`     | `Function`       | Wraps onSubmit callbacks with schema validation and passes the `HandlerContext`.       |
 | `field(path)`               | `Function`       | Returns helper methods (`get`, `set`, `validate`, `reset`, etc.) for a single field.   |
 | `array(path)`               | `Function`       | Returns array helper methods (`push`, `pop`, `remove`, `move`, `update`, etc.).        |
@@ -424,11 +425,7 @@ return (
 | `Field`                     | `ReactComponent` | A pre-bound `<Field />` component specifically for this form instance.                 |
 | `channel`                   | `object`         | High-performance event bus pub-sub channel.                                            |
 | `meta`                      | `object`         | Form metadata and option storage object.                                               |
-| `currentStep`               | `number`         | The current active step index (0-indexed) in a multi-step/wizard form.                 |
-| `totalSteps`                | `number`         | The total number of steps defined in the form config.                                  |
-| `nextStep()`                | `Function`       | Validates only the fields of the current step, and advances to the next step if valid. |
-| `prevStep()`                | `Function`       | Safe helper to go back to the previous step.                                           |
-| `setStep(index)`            | `Function`       | Directly sets the active step index.                                                   |
+| `steps`                     | `object`         | Wizard steps controller (exposes `current`, `total`, `isFirst`, `isLast`, `next()`, `prev()`, and `set(index)`). |
 
 #
 
@@ -677,6 +674,11 @@ Formly features a state-of-the-art, premium interactive Form DevTools Inspector.
 // 3. Complete Opt-out: Disable automatic mounting in development entirely
 <Form use={form} devTools={false}>
   {/* DevTools is completely hidden */}
+</Form>
+
+// 4. Boundary Control: Keep the inspector positioned inside a parent element instead of fixed to the viewport
+<Form use={form} devToolsBoundary="parent">
+  {/* Position boundary ("viewport" | "parent") */}
 </Form>
 ```
 

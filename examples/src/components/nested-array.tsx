@@ -168,7 +168,7 @@ export function NestedArrayFormExample() {
               <form.Field
                 name="customerName"
                 render={(props) => (
-                  <div className="space-y-1">
+                  <>
                     <Label className="text-[11px] font-semibold">
                       Customer Name
                     </Label>
@@ -178,7 +178,7 @@ export function NestedArrayFormExample() {
                       className="text-xs py-1.5"
                       focusClassName="focus:border-purple-500 dark:focus:border-purple-400 focus:ring-purple-500/30"
                     />
-                  </div>
+                  </>
                 )}
               />
 

@@ -204,7 +204,7 @@ export function WizardFormExample() {
                   <form.Field
                     name="fullName"
                     render={(props) => (
-                      <div className="space-y-1">
+                      <>
                         <Label className="text-[11px] flex items-center gap-1.5">
                           <User
                             size={11}
@@ -218,14 +218,14 @@ export function WizardFormExample() {
                           className="text-xs py-1.5"
                           focusClassName="focus:border-pink-500 dark:focus:border-pink-400 focus:ring-pink-500/30"
                         />
-                      </div>
+                      </>
                     )}
                   />
 
                   <form.Field
                     name="age"
                     render={(props, { onChange }) => (
-                      <div className="space-y-1">
+                      <>
                         <Label className="text-[11px]">Age</Label>
                         <Input
                           {...props}
@@ -234,7 +234,7 @@ export function WizardFormExample() {
                           className="text-xs py-1.5"
                           focusClassName="focus:border-pink-500 dark:focus:border-pink-400 focus:ring-pink-500/30"
                         />
-                      </div>
+                      </>
                     )}
                   />
                 </div>
@@ -246,7 +246,7 @@ export function WizardFormExample() {
                   <form.Field
                     name="city"
                     render={(props) => (
-                      <div className="space-y-1">
+                      <>
                         <Label className="text-[11px] flex items-center gap-1.5">
                           <MapPin
                             size={11}
@@ -260,14 +260,14 @@ export function WizardFormExample() {
                           className="text-xs py-1.5"
                           focusClassName="focus:border-pink-500 dark:focus:border-pink-400 focus:ring-pink-500/30"
                         />
-                      </div>
+                      </>
                     )}
                   />
 
                   <form.Field
                     name="zipCode"
                     render={(props) => (
-                      <div className="space-y-1">
+                      <>
                         <Label className="text-[11px]">ZIP Code</Label>
                         <Input
                           {...props}
@@ -275,7 +275,7 @@ export function WizardFormExample() {
                           className="text-xs py-1.5"
                           focusClassName="focus:border-pink-500 dark:focus:border-pink-400 focus:ring-pink-500/30"
                         />
-                      </div>
+                      </>
                     )}
                   />
                 </div>
@@ -297,7 +297,7 @@ export function WizardFormExample() {
                     <form.Field
                       name="agreed"
                       render={(props, { value, onChange }) => (
-                        <div className="space-y-1.5">
+                        <>
                           <label className="flex items-start gap-2 cursor-pointer select-none">
                             <input
                               {...props}
@@ -311,7 +311,7 @@ export function WizardFormExample() {
                               provided are correct.
                             </span>
                           </label>
-                        </div>
+                        </>
                       )}
                     />
                   </div>

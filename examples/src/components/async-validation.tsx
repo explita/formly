@@ -152,7 +152,7 @@ export function AsyncValidationExample() {
                 render={(props) => {
                   const status = getFieldStatus("username");
                   return (
-                    <div className="space-y-1.5">
+                    <>
                       <div className="flex items-center justify-between">
                         <Label className="flex items-center gap-1.5">
                           <User
@@ -194,7 +194,7 @@ export function AsyncValidationExample() {
                             : undefined
                         }
                       />
-                    </div>
+                    </>
                   );
                 }}
               />
@@ -205,7 +205,7 @@ export function AsyncValidationExample() {
                 render={(props) => {
                   const status = getFieldStatus("email");
                   return (
-                    <div className="space-y-1.5">
+                    <>
                       <div className="flex items-center justify-between">
                         <Label className="flex items-center gap-1.5">
                           <AtSign
@@ -248,7 +248,7 @@ export function AsyncValidationExample() {
                             : undefined
                         }
                       />
-                    </div>
+                    </>
                   );
                 }}
               />

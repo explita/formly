@@ -133,7 +133,7 @@ export function NormalizeExample() {
               <form.Field
                 name="phone"
                 render={(props) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label className="flex items-center gap-1.5">
                       <Phone size={11} className="text-slate-400" /> Phone
                       Number
@@ -145,14 +145,14 @@ export function NormalizeExample() {
                       className="font-mono tracking-wide"
                       focusClassName="focus:border-sky-500 dark:focus:border-sky-400 focus:ring-sky-500/30"
                     />
-                  </div>
+                  </>
                 )}
               />
 
               <form.Field
                 name="card"
                 render={(props) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label className="flex items-center gap-1.5">
                       <CreditCard size={11} className="text-slate-400" /> Card
                       Number
@@ -164,14 +164,14 @@ export function NormalizeExample() {
                       className="font-mono tracking-widest"
                       focusClassName="focus:border-sky-500 dark:focus:border-sky-400 focus:ring-sky-500/30"
                     />
-                  </div>
+                  </>
                 )}
               />
 
               <form.Field
                 name="coupon"
                 render={(props) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label>
                       Coupon Code{" "}
                       <span className="text-slate-400">(auto-uppercased)</span>
@@ -182,7 +182,7 @@ export function NormalizeExample() {
                       className="font-mono tracking-widest uppercase"
                       focusClassName="focus:border-sky-500 dark:focus:border-sky-400 focus:ring-sky-500/30"
                     />
-                  </div>
+                  </>
                 )}
               />
             </div>

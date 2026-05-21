@@ -300,7 +300,7 @@ export type FormInstance<
   group: <P extends Path<T>>(path: P) => GroupHelpers<PathValue<T, P>>;
   // markTouched: (name: Path<T>) => void;
   isDirty: (name?: Path<T>) => boolean;
-  // isTouched: (name: Path<T>) => boolean;
+  isTouched: (name?: Path<T>) => boolean;
   focus: (name: Path<T>) => void;
   /**
    * A utility function to compute a value based on the form values.
@@ -485,7 +485,7 @@ export type FormOptionsInternal<
   /**
    * The mode of the form.
    *
-   * @default "uncontrolled"
+   * @default "controlled"
    */
   mode?: "controlled" | "uncontrolled";
   /**

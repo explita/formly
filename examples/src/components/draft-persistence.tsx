@@ -4,7 +4,6 @@ import React from "react";
 import { z } from "zod";
 import { Form, useForm } from "@/dist";
 import { Input } from "./input";
-import { Label } from "./label";
 import {
   HardDrive,
   FileText,
@@ -130,48 +129,48 @@ export function DraftPersistenceExample() {
             <div className="space-y-3">
               <form.Field
                 name="title"
+                label={
+                  <>
+                    <FileText size={11} className="text-slate-400" /> Title
+                  </>
+                }
+                required
                 render={(props) => (
-                  <div className="space-y-1">
-                    <Label className="flex items-center gap-1.5">
-                      <FileText size={11} className="text-slate-400" /> Title
-                    </Label>
-                    <Input
-                      {...props}
-                      placeholder="Post title..."
-                      focusClassName="focus:border-teal-500 dark:focus:border-teal-400 focus:ring-teal-500/30"
-                    />
-                  </div>
+                  <Input
+                    {...props}
+                    placeholder="Post title..."
+                    focusClassName="focus:border-teal-550 dark:focus:border-teal-400 focus:ring-teal-550/30"
+                  />
                 )}
               />
 
               <form.Field
                 name="body"
+                label="Body"
+                required
                 render={(props) => (
-                  <div className="space-y-1">
-                    <Label>Body</Label>
-                    <textarea
-                      {...props}
-                      rows={3}
-                      placeholder="Write your content... (auto-saved as you type)"
-                      className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all duration-200 resize-none focus:border-teal-500 dark:focus:border-teal-400"
-                    />
-                  </div>
+                  <textarea
+                    {...props}
+                    rows={3}
+                    placeholder="Write your content... (auto-saved as you type)"
+                    className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all duration-200 resize-none focus:border-teal-550 dark:focus:border-teal-400"
+                  />
                 )}
               />
 
               <form.Field
                 name="tags"
+                label={
+                  <>
+                    Tags <span className="text-slate-400 font-normal">(optional)</span>
+                  </>
+                }
                 render={(props) => (
-                  <div className="space-y-1">
-                    <Label>
-                      Tags <span className="text-slate-400">(optional)</span>
-                    </Label>
-                    <Input
-                      {...props}
-                      placeholder="e.g. react, forms, typescript"
-                      focusClassName="focus:border-teal-500 dark:focus:border-teal-400 focus:ring-teal-500/30"
-                    />
-                  </div>
+                  <Input
+                    {...props}
+                    placeholder="e.g. react, forms, typescript"
+                    focusClassName="focus:border-teal-550 dark:focus:border-teal-400 focus:ring-teal-550/30"
+                  />
                 )}
               />
             </div>

@@ -32,5 +32,8 @@ export function useFormById<T extends Record<string, any>>(
     get isDirty() {
       return form.isDirty();
     },
+    get schema() {
+      return (form as any)?.schema;
+    },
   };
 }

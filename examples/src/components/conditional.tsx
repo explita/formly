@@ -127,7 +127,7 @@ export function ConditionalExample() {
               <form.Field
                 name="accountType"
                 render={(props, { value, onChange }) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label>Account Type</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {(["personal", "business"] as const).map((type) => (
@@ -162,7 +162,7 @@ export function ConditionalExample() {
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </>
                 )}
               />
 
@@ -170,14 +170,14 @@ export function ConditionalExample() {
               <form.Field
                 name="fullName"
                 render={(props) => (
-                  <div className="space-y-1">
+                  <>
                     <Label>Full Name</Label>
                     <Input
                       {...props}
                       placeholder="Your legal name"
                       focusClassName="focus:border-rose-500 dark:focus:border-rose-400 focus:ring-rose-500/30"
                     />
-                  </div>
+                  </>
                 )}
               />
 
@@ -187,14 +187,14 @@ export function ConditionalExample() {
                   <form.Field
                     name="dateOfBirth"
                     render={(props) => (
-                      <div className="space-y-1">
+                      <>
                         <Label>Date of Birth</Label>
                         <Input
                           {...props}
                           type="date"
                           focusClassName="focus:border-rose-500 dark:focus:border-rose-400 focus:ring-rose-500/30"
                         />
-                      </div>
+                      </>
                     )}
                   />
                 </div>
@@ -206,34 +206,34 @@ export function ConditionalExample() {
                   <form.Field
                     name="companyName"
                     render={(props) => (
-                      <div className="space-y-1">
+                      <>
                         <Label>Company Name</Label>
                         <Input
                           {...props}
                           placeholder="Acme Corp"
                           focusClassName="focus:border-rose-500 dark:focus:border-rose-400 focus:ring-rose-500/30"
                         />
-                      </div>
+                      </>
                     )}
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <form.Field
                       name="taxId"
                       render={(props) => (
-                        <div className="space-y-1">
+                        <>
                           <Label>Tax ID</Label>
                           <Input
                             {...props}
                             placeholder="EIN / VAT"
                             focusClassName="focus:border-rose-500 dark:focus:border-rose-400 focus:ring-rose-500/30"
                           />
-                        </div>
+                        </>
                       )}
                     />
                     <form.Field
                       name="employeeCount"
                       render={(props) => (
-                        <div className="space-y-1">
+                        <>
                           <Label>Employees</Label>
                           <select
                             {...props}
@@ -245,7 +245,7 @@ export function ConditionalExample() {
                             <option value="51-200">51–200</option>
                             <option value="200+">200+</option>
                           </select>
-                        </div>
+                        </>
                       )}
                     />
                   </div>

@@ -1,12 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "../hooks/use-form.js";
-import { FormDevTools } from "../components/devtoos/main.js";
+import { FormDevTools } from "../components/devtools/main.js";
 import { css } from "../lib/css.js";
 import type { z } from "zod";
-import { Path } from "types/path.js";
-import { SchemaType } from "types/utils.js";
+import { Path } from "../types/path.js";
+import { SchemaType } from "../types/utils.js";
+import { DevtoolBoundary } from "../components/devtools/types/index.js";
+import { registry } from "../lib/form-registry.js";
 
 export type FormContextValue<
   TSchema extends z.ZodObject | undefined = undefined,
@@ -56,9 +58,9 @@ type FormProps<
     | "bottom-left"
     | "top-right"
     | "top-left";
+  devToolsBoundary?: DevtoolBoundary;
 } & React.HTMLAttributes<HTMLFormElement | HTMLDivElement>;
 
-// export const FormContext = createContext<FormContextValue | null>(null);
 export const FormContext = React.createContext<FormContextValue<
   any,
   any,
@@ -109,6 +111,7 @@ export function Form<
   className,
   onSubmit,
   devTools = true,
+  devToolsBoundary = "viewport",
   ...rest
 }: FormProps<TSchema, DefaultValues, TComputed, TAsyncValidation, TSteps>) {
   const formInstance = use ?? useForm();
@@ -121,21 +124,36 @@ export function Form<
   const showDevTools = devTools !== false;
   const devToolsPos = typeof devTools === "string" ? devTools : undefined;
 
+  useEffect(() => {
+    if (formInstance) {
+      const prev = (formInstance as any)._devToolsEnabled;
+      (formInstance as any)._devToolsEnabled = showDevTools;
+      if (prev !== showDevTools) {
+        registry.notify();
+      }
+    }
+  }, [formInstance, showDevTools]);
+
   return (
     // @ts-ignore
     <FormContext.Provider value={formInstance}>
       <Element
         onSubmit={submitFn}
         className={`explita-form ${className ?? ""}`}
+        data-form-id={formInstance.id}
         {...rest}
       >
         <style>{css}</style>
         {children}
+        {showDevTools && (
+          <FormDevTools
+            //@ts-expect-error
+            use={formInstance}
+            position={devToolsPos}
+            boundary={devToolsBoundary}
+          />
+        )}
       </Element>
-      {showDevTools && (
-        //@ts-expect-error
-        <FormDevTools use={formInstance} position={devToolsPos} />
-      )}
     </FormContext.Provider>
   );
 }

@@ -1,4 +1,7 @@
-export const css = `.explita-form .form-label {
+export const css = `.explita-form {
+  position: relative;
+}
+.explita-form .form-label {
   display: flex;
   align-items: center;
   gap: 0.5rem; /* gap-2 */

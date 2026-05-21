@@ -123,7 +123,7 @@ export function CascadingFormExample() {
               <form.Field
                 name="country"
                 render={(props, { onChange }) => (
-                  <div className="space-y-1.5">
+                  <>
                     <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Globe
                         size={12}
@@ -169,7 +169,7 @@ export function CascadingFormExample() {
                         ▼
                       </span>
                     </div>
-                  </div>
+                  </>
                 )}
               />
 
@@ -181,7 +181,7 @@ export function CascadingFormExample() {
                   const isCountrySelected = !!form.getValue("country");
 
                   return (
-                    <div className="space-y-1.5">
+                    <>
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                           <MapPin
@@ -225,7 +225,7 @@ export function CascadingFormExample() {
                           ▼
                         </span>
                       </div>
-                    </div>
+                    </>
                   );
                 }}
               />

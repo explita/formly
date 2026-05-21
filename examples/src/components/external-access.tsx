@@ -180,12 +180,12 @@ export function ExternalAccessExample() {
           <div className="flex-1 flex flex-col justify-between space-y-2.5">
             {/* <Form> wraps only the fields + submit — FormMonitor is a sibling OUTSIDE */}
             <Form use={form}>
-              <div className="space-y-2">
+              <div className="space-y-2 mb-2">
                 {/* Name */}
                 <form.Field
                   name="name"
                   render={(props) => (
-                    <div className="space-y-1">
+                    <>
                       <Label className="flex items-center gap-1.5">
                         <User size={11} className="text-slate-400" /> Name
                       </Label>
@@ -194,7 +194,7 @@ export function ExternalAccessExample() {
                         placeholder="e.g. Jane Doe"
                         focusClassName="focus:border-violet-500 dark:focus:border-violet-400 focus:ring-violet-500/30"
                       />
-                    </div>
+                    </>
                   )}
                 />
 
@@ -202,7 +202,7 @@ export function ExternalAccessExample() {
                 <form.Field
                   name="email"
                   render={(props) => (
-                    <div className="space-y-1">
+                    <>
                       <Label className="flex items-center gap-1.5">
                         <Mail size={11} className="text-slate-400" /> Email
                       </Label>
@@ -212,7 +212,7 @@ export function ExternalAccessExample() {
                         placeholder="e.g. jane@example.com"
                         focusClassName="focus:border-violet-500 dark:focus:border-violet-400 focus:ring-violet-500/30"
                       />
-                    </div>
+                    </>
                   )}
                 />
 
@@ -220,9 +220,9 @@ export function ExternalAccessExample() {
                 <form.Field
                   name="message"
                   render={(props) => (
-                    <div className="space-y-1">
+                    <>
                       <Label className="flex items-center gap-1.5">
-                        <MessageSquare size={11} className="text-slate-400" />{" "}
+                        <MessageSquare size={11} className="text-slate-400" />
                         Message
                       </Label>
                       <textarea
@@ -231,7 +231,7 @@ export function ExternalAccessExample() {
                         placeholder="Write something..."
                         className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all duration-200 resize-none focus:border-violet-500 dark:focus:border-violet-400"
                       />
-                    </div>
+                    </>
                   )}
                 />
               </div>

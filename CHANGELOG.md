@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-05-21
+
+### Added
+
+- **DevTools Boundary Control**: Added the `devToolsBoundary` option to `<Form>` component to easily restrict the DevTools floating panel inside the viewport or its parent container.
+- **Form Schema Exposure**: Exposed the current `schema` getter on both the `FormInstance` object and the returned object of the `useFormById` hook.
+- **Type Enhancements**: Added `isTouched` to the public TypeScript type definition of the form instance.
+
+### Fixed
+
+- **DevTools Path Typo**: Corrected internal folder name typo from `devtoos` to `devtools` and refactored all internal imports/exports accordingly.
+- **Label Nesting Prevention**: Improved the `<Label>` component to automatically detect nested label elements and dynamically render as a `span` or use a customizable tag with the `as` prop, avoiding invalid nested `<label>` structures.
+- **Form Registry Safekeeping**: Safely unsubscribe and clear references from the global `FormRegistry` during component unmounting, matching only active instance IDs to prevent accidental cleanup of subsequent form renders.
+- **Drafts LocalStorage Safety**: Wrapped localStorage operations with try-catch blocks to prevent runtime crashes in iframe contexts or restricted browser settings.
+
 ## [0.2.0] - 2026-05-19
 
 ### Added

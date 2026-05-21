@@ -39,7 +39,7 @@ export function BasicFormExample() {
   }
 
   return (
-    <Form use={form}>
+    <Form use={form} devTools={true}>
       <div className="relative overflow-hidden bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-xl dark:shadow-2xl transition-all duration-300 hover:border-indigo-500/30 dark:hover:border-indigo-500/30 flex flex-col justify-between h-[450px]">
         {/* Decorative Top Gradient Line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
@@ -106,7 +106,7 @@ export function BasicFormExample() {
               <form.Field
                 name="username"
                 render={(props) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label>
                       <User
                         size={12}
@@ -115,7 +115,7 @@ export function BasicFormExample() {
                       Username
                     </Label>
                     <Input {...props} placeholder="e.g. alex_developer" />
-                  </div>
+                  </>
                 )}
               />
 
@@ -123,7 +123,7 @@ export function BasicFormExample() {
               <form.Field
                 name="email"
                 render={(props) => (
-                  <div className="space-y-1.5">
+                  <>
                     <Label className="flex items-center gap-1.5">
                       <Mail
                         size={12}
@@ -136,7 +136,7 @@ export function BasicFormExample() {
                       type="email"
                       placeholder="e.g. alex@example.com"
                     />
-                  </div>
+                  </>
                 )}
               />
 

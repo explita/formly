@@ -1833,6 +1833,9 @@ export function useForm<
       return res;
     },
     id: formIdRef.current,
+    get schema() {
+      return currentSchema.current;
+    },
   };
 
   if (formIdRef.current) {
@@ -1840,10 +1843,22 @@ export function useForm<
     registry.add(formIdRef.current, values);
   }
 
+  const lastValuesRef = useRef(values);
+  lastValuesRef.current = values;
+
   useEffect(() => {
     return () => {
       if (formIdRef.current) {
-        registry.delete(formIdRef.current);
+        try {
+          if (
+            registry.has(formIdRef.current) &&
+            (registry.get(formIdRef.current) as any) === lastValuesRef.current
+          ) {
+            registry.delete(formIdRef.current);
+          }
+        } catch {
+          // Ignore if already deleted/not found
+        }
       }
     };
   }, []);
