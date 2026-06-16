@@ -6,11 +6,12 @@ import { Form, useForm } from "@/dist";
 import { Input } from "../input";
 import { Label } from "../label";
 import { Check, Mail, User, Info, Activity } from "lucide-react";
+//@ts-ignore
 import DemoCode from "./demo-code.mdx";
 
 const demoSchema = z.object({
   fullName: z.string().min(3, "Name must be at least 3 characters"),
-  email: z.string().email("Enter a valid email address"),
+  email: z.email("Enter a valid email address"),
 });
 
 export function LiveDemo() {
