@@ -46,11 +46,11 @@ export function AsyncValidationExample() {
     asyncValidate: {
       username: {
         debounce: 600,
-        validate: checkUsername,
+        fn: checkUsername,
       },
       email: {
         debounce: 600,
-        validate: checkEmail,
+        fn: checkEmail,
       },
     },
     onSubmit: (_values, ctx) => {

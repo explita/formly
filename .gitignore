@@ -2,3 +2,5 @@ dist
 node_modules
 dev
 *.tgz
+docs/build
+docs/.docusaurus

@@ -172,10 +172,10 @@ export function useForm<
     preventUnload = false,
   } = options || {};
 
+  const persistKey = options?.persistKey || options?.id;
   const formIdRef = useRef<string>(
-    id || `form_${Math.random().toString(36).substring(2, 9)}`,
+    persistKey || `form_${Math.random().toString(36).substring(2, 9)}`,
   );
-  const persistKey = options?.persistKey ?? options?.id;
 
   const cascadeRef = useRef(options?.cascade);
   cascadeRef.current = options?.cascade;
@@ -1099,55 +1099,60 @@ export function useForm<
     [unsubscribeField],
   );
 
-  const reset = useCallback(() => {
-    Object.keys(fieldSubscribersRef.current).forEach((name) =>
-      fieldSubscribersRef.current[name]?.forEach((cb) => cb("")),
-    );
+  const reset = useCallback(
+    (opts?: { ignoreDefaults?: boolean }) => {
+      Object.keys(fieldSubscribersRef.current).forEach((name) =>
+        fieldSubscribersRef.current[name]?.forEach((cb) => cb("")),
+      );
 
-    Object.keys(fieldErrorSubscribersRef.current).forEach((name) =>
-      fieldErrorSubscribersRef.current[name]?.forEach((fn) => fn(undefined)),
-    );
+      Object.keys(fieldErrorSubscribersRef.current).forEach((name) =>
+        fieldErrorSubscribersRef.current[name]?.forEach((fn) => fn(undefined)),
+      );
 
-    dirtyFieldsRef.current = {};
-    touchedFieldsRef.current = {};
+      dirtyFieldsRef.current = {};
+      touchedFieldsRef.current = {};
 
-    formValues.current = flattenFormValues({
-      ...generatePlaceholders,
-      ...defaultValues,
-    });
+      formValues.current = flattenFormValues({
+        ...generatePlaceholders,
+        ...(opts?.ignoreDefaults ? {} : defaultValues),
+      });
 
-    channelBus.channel("value:*").emit(getValues());
+      setErrors({});
+      formErrors.current = {};
 
-    // 🔔 Notify all field subscribers of the cleared value
-    Object.keys(formValues.current).forEach((key) => {
-      channelBus.channel(`value:${key}` as any).emit(getValue(key));
-    });
+      if (persistKey) deleteDraft(persistKey);
 
-    setErrors({});
-    formErrors.current = {};
+      // 🔔 Clear form metadata context
+      // metaRef.current.clear();
 
-    if (persistKey) deleteDraft(persistKey);
+      // 🔔 Reset wizard step state back to step 1
+      setCurrentStep(0);
 
-    // 🔔 Clear form metadata context
-    // metaRef.current.clear();
+      // 🔔 Re-calculate all computed fields after reset
+      Object.entries(computedFieldsRef.current).forEach(([name, { fn }]) => {
+        void safeCompute(name, fn, undefined, { silent: true });
+      });
 
-    // 🔔 Reset wizard step state back to step 1
-    setCurrentStep(0);
+      setValues(
+        {
+          ...generatePlaceholders,
+          ...(opts?.ignoreDefaults ? {} : defaultValues),
+        },
+        { overwrite: true },
+        true,
+      );
 
-    // 🔔 Re-calculate all computed fields after reset
-    Object.entries(computedFieldsRef.current).forEach(([name, { fn }]) => {
-      void safeCompute(name, fn, undefined, { silent: true });
-    });
-
-    triggerRerender();
-  }, [
-    defaultValues,
-    persistKey,
-    getValues,
-    getValue,
-    generatePlaceholders,
-    triggerRerender,
-  ]);
+      triggerRerender();
+    },
+    [
+      defaultValues,
+      persistKey,
+      getValues,
+      getValue,
+      generatePlaceholders,
+      triggerRerender,
+    ],
+  );
 
   const resetField = useCallback((name: string) => {
     const combined = { ...generatePlaceholders, ...defaultValues };
@@ -1195,7 +1200,7 @@ export function useForm<
       asyncTimersRef.current[name] = setTimeout(async () => {
         setValidatingFields((prev) => ({ ...prev, [name]: true }));
         try {
-          const error = await config.validate(value, prevValue);
+          const error = await config.fn(value, getValues());
 
           // If this is still the latest request version, commit it!
           if (asyncVersionsRef.current[name] === currentVersion) {
@@ -1229,11 +1234,10 @@ export function useForm<
       async ([name, config]: [string, any]) => {
         if (!config) return;
         const value = getValue(name);
-        const prevValue = getValueByPath(initialValuesRef.current, name);
 
         setValidatingFields((prev) => ({ ...prev, [name]: true }));
         try {
-          const error = await config.validate(value, prevValue);
+          const error = await config.fn(value, getValues());
           if (error) {
             errors[name] = error;
           }
@@ -1290,7 +1294,11 @@ export function useForm<
 
   const handleSubmit = useCallback(
     (
-      onValid: (data: any, ctx: HandlerContext<any>) => void | Promise<void>,
+      onValid: (
+        data: any,
+        ctx: HandlerContext<any>,
+        raw: FormData,
+      ) => void | Promise<void>,
     ) => {
       return async (event?: React.FormEvent) => {
         if (event) event.preventDefault();
@@ -1302,9 +1310,13 @@ export function useForm<
           setIsSubmitting(true);
 
           const data = structuredClone(validatedData);
+          const raw =
+            event?.currentTarget instanceof HTMLFormElement
+              ? new FormData(event.currentTarget)
+              : new FormData();
 
           //@ts-ignore
-          await onValid(validatedData, createHandlerContext(data));
+          await onValid(validatedData, createHandlerContext(data), raw);
         } finally {
           setIsSubmitting(false);
         }
@@ -1550,11 +1562,10 @@ export function useForm<
         if (!config) return;
 
         const val = getValue(field);
-        const prevVal = getValueByPath(initialValuesRef.current, field);
 
         setValidatingFields((prev) => ({ ...prev, [field]: true }));
         try {
-          const err = await config.validate(val, prevVal);
+          const err = await config.fn(val, getValues());
           if (err) {
             stepErrors[field] = err;
             hasStepError = true;
@@ -1803,6 +1814,7 @@ export function useForm<
     validated: isValidated,
     isValidating,
     validatingFields,
+    busy: isSubmitting || isValidating,
     getChanges,
     isDirty,
     markDirty,

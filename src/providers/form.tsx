@@ -121,7 +121,17 @@ export function Form<
   //@ts-ignore
   const submitFn = onSubmit || formInstance.onSubmit;
 
-  const showDevTools = devTools !== false;
+  const isProd =
+    ((typeof process !== "undefined" &&
+      process.env.NODE_ENV === "production") ||
+      // @ts-ignore
+      (typeof import.meta !== "undefined" && import.meta.env?.PROD)) &&
+    !(
+      typeof process !== "undefined" &&
+      process.env.NEXT_PUBLIC_IS_EXAMPLES === "true"
+    );
+
+  const showDevTools = !isProd && devTools !== false;
   const devToolsPos = typeof devTools === "string" ? devTools : undefined;
 
   useEffect(() => {

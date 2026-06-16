@@ -9,12 +9,20 @@ export type ArrayItem<
     ? T[Key] extends Record<string, any>
       ? ArrayItem<T[Key], Rest>
       : never
-    : never
+    : Key extends `${number}`
+      ? T extends ReadonlyArray<infer U>
+        ? ArrayItem<U, Rest>
+        : never
+      : never
   : P extends keyof T
     ? T[P] extends Array<infer U>
       ? U
       : never
-    : never;
+    : P extends `${number}`
+      ? T extends ReadonlyArray<infer U>
+        ? U
+        : never
+      : never;
 
 export type ArrayHelpers<T> = {
   /**
@@ -116,7 +124,7 @@ export type ArrayHelpers<T> = {
    * Removes the item at the specified index from the array for the specified path and updates the form values.
    * @param index The index of the item to remove.
    */
-  remove: (index: number) => void;
+  remove: (index: number | number[]) => void;
   /**
    * Removes all items from the array for the specified path and updates the form values.
    */

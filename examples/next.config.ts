@@ -1,11 +1,18 @@
-import type { NextConfig } from "next";
+import nextra from "nextra";
+import path from "path";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const withNextra = nextra({
+  contentDirBasePath: "/docs",
+});
+
+const nextConfig = {
   reactCompiler: true,
+  turbopack: {
+    root: path.join(__dirname, "."),
+  },
   env: {
     NEXT_PUBLIC_IS_EXAMPLES: "true",
   },
 };
 
-export default nextConfig;
+export default withNextra(nextConfig);

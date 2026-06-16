@@ -72,7 +72,7 @@ export function CascadingFormExample() {
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                   Cascading Selector
                 </h3>
-                <p className="text-xs text-slate-505 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Reactive dynamic field loading
                 </p>
               </div>
@@ -95,7 +95,7 @@ export function CascadingFormExample() {
               <h4 className="text-base font-medium text-slate-900 dark:text-slate-100">
                 Location Verified!
               </h4>
-              <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Sub-options fetched and validated smoothly.
               </p>
             </div>
@@ -127,7 +127,7 @@ export function CascadingFormExample() {
                     <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Globe
                         size={12}
-                        className="text-slate-400 dark:text-slate-550"
+                        className="text-slate-400 dark:text-slate-500"
                       />
                       Country
                     </label>
@@ -138,7 +138,7 @@ export function CascadingFormExample() {
                           onChange(e.target.value);
                           form.setValue("city", ""); // Reset dependent city when country changes
                         }}
-                        className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 outline-none transition-all duration-200 appearance-none focus:border-emerald-500 dark:focus:border-emerald-455"
+                        className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 outline-none transition-all duration-200 appearance-none focus:border-emerald-500 dark:focus:border-emerald-500"
                       >
                         <option
                           value=""
@@ -186,7 +186,7 @@ export function CascadingFormExample() {
                         <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                           <MapPin
                             size={12}
-                            className="text-slate-400 dark:text-slate-550"
+                            className="text-slate-400 dark:text-slate-500"
                           />
                           City
                         </label>
@@ -201,7 +201,7 @@ export function CascadingFormExample() {
                         <select
                           {...props}
                           disabled={!isCountrySelected || isCityLoading}
-                          className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 outline-none transition-all duration-200 appearance-none disabled:opacity-40 disabled:cursor-not-allowed focus:border-emerald-500 dark:focus:border-emerald-455"
+                          className="w-full text-sm bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 outline-none transition-all duration-200 appearance-none disabled:opacity-40 disabled:cursor-not-allowed focus:border-emerald-500 dark:focus:border-emerald-500"
                         >
                           <option
                             value=""

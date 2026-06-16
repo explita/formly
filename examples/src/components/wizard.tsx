@@ -106,12 +106,12 @@ export function WizardFormExample() {
               <h4 className="text-base font-medium text-slate-900 dark:text-slate-100">
                 Registration Complete!
               </h4>
-              <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Wizard verified step constraints beautifully.
               </p>
             </div>
 
-            <div className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-855 rounded-xl p-3 text-left font-mono text-[11px] text-indigo-650 dark:text-indigo-300 grid grid-cols-2 gap-x-4 gap-y-1">
+            <div className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-left font-mono text-[11px] text-indigo-600 dark:text-indigo-300 grid grid-cols-2 gap-x-4 gap-y-1">
               <div>
                 Name:{" "}
                 <span className="text-slate-800 dark:text-slate-200 font-semibold">
@@ -250,7 +250,7 @@ export function WizardFormExample() {
                         <Label className="text-[11px] flex items-center gap-1.5">
                           <MapPin
                             size={11}
-                            className="text-slate-400 dark:text-slate-550"
+                            className="text-slate-400 dark:text-slate-500"
                           />
                           City
                         </Label>
@@ -304,7 +304,7 @@ export function WizardFormExample() {
                               type="checkbox"
                               checked={!!value}
                               onChange={(e) => onChange(e.target.checked)}
-                              className="mt-0.5 rounded border-slate-200 dark:border-slate-800 text-pink-500 focus:ring-pink-550/30"
+                              className="mt-0.5 rounded border-slate-200 dark:border-slate-800 text-pink-500 focus:ring-pink-500/30"
                             />
                             <span className="text-[10px] text-slate-700 dark:text-slate-300 leading-normal">
                               I accept terms and verify that all details

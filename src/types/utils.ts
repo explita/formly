@@ -117,12 +117,14 @@ export type HandlerContext<T> = {
   setErrors: SetErrors<T>;
   mapErrors: MapErrors;
   setValues: SetValues<T>;
-  reset: () => void;
+  reset: ResetFn;
   focus: (name: Path<T>) => void;
   array: <P extends Path<T>>(path: P) => HandlerArrayHelpers<ArrayItem<T, P>>;
   meta: FormMeta;
   getChanges: () => Partial<T>;
 };
+
+type ResetFn = (opts?: { ignoreDefaults?: boolean }) => void;
 
 type ReadyContext<T> = {
   meta: FormMeta;
@@ -168,6 +170,10 @@ export type FormInstance<
   validatingFields: [keyof TAsyncValidation] extends [never]
     ? Record<string, boolean>
     : Record<keyof TAsyncValidation, boolean>;
+  /**
+   * Indicates whether the form is busy (submitting or validating).
+   */
+  busy: boolean;
   /**
    * Mapping of cascading options and loading states resolved for each field path.
    */
@@ -245,7 +251,7 @@ export type FormInstance<
    * Clears the form values and errors, and if persistKey is provided, it will
    * also remove the persisted state from localStorage.
    */
-  reset: () => void;
+  reset: ResetFn;
   /**
    * Resets the value of a specific form field to its default value.
    *
@@ -265,7 +271,11 @@ export type FormInstance<
    * @returns A function that can be used as a form's `onSubmit` handler.
    */
   handleSubmit: (
-    onValid: (data: T, ctx: HandlerContext<T>) => MaybePromise<void>,
+    onValid: (
+      data: T,
+      ctx: HandlerContext<T>,
+      raw: FormData,
+    ) => MaybePromise<void>,
   ) => (event: React.FormEvent<HTMLFormElement>) => MaybePromise<void>;
   /**
    * A utility function to register a form field.
@@ -472,6 +482,7 @@ export type FormOptionsInternal<
     ctx: HandlerContext<
       Prettify<SchemaType<TSchema, TValues> & InferComputed<TComputed>>
     >,
+    raw: FormData,
   ) => void;
   /**
    * Called when the form is ready/mounted.
@@ -539,9 +550,9 @@ export type FormOptionsInternal<
           /**
            * The async validation function.
            */
-          validate: (
+          fn: (
             value: PathValue<SchemaType<TSchema, TValues>, P>,
-            prevValue: PathValue<SchemaType<TSchema, TValues>, P> | undefined,
+            formValues: SchemaType<TSchema, TValues>,
           ) => Promise<string | undefined | null>;
         }
       : never;

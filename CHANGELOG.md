@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-16
+
+### Added
+
+- **Form Submission Raw Data**: The `onSubmit`/`handleSubmit` validation callback now passes native browser `raw: FormData` as the 3rd parameter, facilitating file uploads and custom FormData processing.
+- **Form Busy State**: Added a new public `busy` property to `FormInstance` that indicates whether the form is currently submitting or validating (`isSubmitting || isValidating`).
+- **Batch Array Removal**: Extended the form array helper `remove()` to accept either a single index `number` or an array of indices `number[]` to delete multiple elements in a single batch update with correct index shifting.
+- **Reset Options**: Added configuration options support to the `reset(opts?: { ignoreDefaults?: boolean })` helper, allowing developers to reset form values while ignoring default values if specified.
+
+### Changed
+
+- **Async Validation Signature (Breaking)**:
+  - Renamed the async validation callback configuration property from `validate` to `fn`.
+  - Changed the callback parameters to `fn: (value, formValues) => Promise<string | undefined | null>` (passing the full form values instead of only the previous field value), enabling async validations that depend on other form fields.
+
+### Fixed
+
+- **Type Safety**:
+  - Corrected `ArrayItem` typescript helper to resolve index types properly for readonly arrays.
+- **DevTools Production Optimization**: Configured DevTools floating inspector to automatically render as `null` in production environments, except when the explicit environment variable `NEXT_PUBLIC_IS_EXAMPLES === "true"` is set.
+
 ## [0.2.1] - 2026-05-21
 
 ### Added

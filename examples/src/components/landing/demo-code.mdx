@@ -1,0 +1,26 @@
+```tsx
+import { useForm, Form } from "@explita/formly";
+import { z } from "zod";
+
+const formSchema = z.object({
+  fullName: z.string().min(3, "Min 3 chars"),
+  email: z.string().email("Invalid email"),
+});
+
+export default function Demo() {
+  const form = useForm({
+    schema: formSchema,
+    defaultValues: { fullName: "", email: "" },
+    onSubmit: (values) => sendToAPI(values),
+  });
+
+  return (
+    <Form use={form}>
+      <form.Field name="fullName" render={(props) => (
+        <input {...props} />
+      )} />
+      {/* Targeted channel render update! */}
+    </Form>
+  );
+}
+```

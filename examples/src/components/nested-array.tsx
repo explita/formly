@@ -118,7 +118,7 @@ export function NestedArrayFormExample() {
             </div>
 
             {/* Receipt Summary Card */}
-            <div className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 rounded-xl p-3 text-left text-xs font-mono space-y-1 text-slate-700 dark:text-slate-300">
+            <div className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-left text-xs font-mono space-y-1 text-slate-700 dark:text-slate-300">
               <div className="flex justify-between text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800 pb-1.5 mb-1.5">
                 <span>ITEM ({form.values.items.length})</span>
                 <span>SUBTOTAL</span>
@@ -135,7 +135,7 @@ export function NestedArrayFormExample() {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-slate-200 dark:border-slate-850 pt-1.5 mt-1.5 space-y-1 text-[11px]">
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-1.5 mt-1.5 space-y-1 text-[11px]">
                 <div className="flex justify-between text-slate-500 dark:text-slate-400">
                   <span>Subtotal:</span>
                   <span>${totals.subtotal.toFixed(2)}</span>
@@ -191,7 +191,7 @@ export function NestedArrayFormExample() {
                   <button
                     type="button"
                     onClick={() => items.push(schema)}
-                    className="flex items-center gap-1 text-[10px] bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-650 dark:text-purple-400 border border-purple-100 dark:border-purple-500/20 rounded px-2 py-0.5 font-bold transition-all duration-200"
+                    className="flex items-center gap-1 text-[10px] bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-500/20 rounded px-2 py-0.5 font-bold transition-all duration-200"
                   >
                     <Plus size={10} />
                     Add Item
@@ -259,7 +259,7 @@ export function NestedArrayFormExample() {
                           }
                         }}
                         disabled={items.length <= 1}
-                        className="text-slate-450 dark:text-slate-500 hover:text-red-500 disabled:opacity-30 disabled:hover:text-slate-450 transition-all duration-200"
+                        className="text-slate-400 dark:text-slate-500 hover:text-red-500 disabled:opacity-30 disabled:hover:text-slate-400 transition-all duration-200"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -270,7 +270,7 @@ export function NestedArrayFormExample() {
             </div>
 
             {/* Receipt calculation table */}
-            <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-xl p-2.5 space-y-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 space-y-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
                 <span className="text-slate-800 dark:text-slate-200 font-semibold">
@@ -283,7 +283,7 @@ export function NestedArrayFormExample() {
                   ${totals.tax.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between font-semibold text-indigo-650 dark:text-indigo-400 text-xs border-t border-slate-200 dark:border-slate-800/80 pt-1 mt-1">
+              <div className="flex justify-between font-semibold text-indigo-600 dark:text-indigo-400 text-xs border-t border-slate-200 dark:border-slate-800/80 pt-1 mt-1">
                 <span>Grand Total:</span>
                 <span className="drop-shadow-[0_0_10px_rgba(99,102,241,0.2)]">
                   ${totals.total.toFixed(2)}

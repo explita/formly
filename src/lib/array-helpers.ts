@@ -59,9 +59,16 @@ export function formArrayHelper<T = any>(
     setValues(newFlat, { overwrite: true });
   }
 
-  function remove(index: number) {
+  function remove(index: number | number[]) {
     const currentKeys = [...getKeys()];
-    currentKeys.splice(index, 1);
+    if (Array.isArray(index)) {
+      const sorted = [...index].sort((a, b) => b - a);
+      sorted.forEach((i) => {
+        currentKeys.splice(i, 1);
+      });
+    } else {
+      currentKeys.splice(index, 1);
+    }
     setKeys(currentKeys);
     removeArrayItem(formValues, setValues, path, index);
   }
@@ -365,7 +372,7 @@ function removeArrayItem<T>(
   formValues: T,
   setValues: SetValues<T>,
   path: string,
-  index: number,
+  index: number | number[],
 ) {
   const prefix = `${path}.`;
   const flat = { ...formValues };
@@ -386,6 +393,8 @@ function removeArrayItem<T>(
     }
   }
 
+  const indicesToRemove = new Set(Array.isArray(index) ? index : [index]);
+
   for (const key of keys) {
     const rest = key.slice(prefix.length);
     const [arrayIndexStr] = rest.split(".");
@@ -393,9 +402,16 @@ function removeArrayItem<T>(
 
     if (Number.isNaN(currentIndex)) continue;
 
-    if (currentIndex === index) continue;
+    if (indicesToRemove.has(currentIndex)) continue;
 
-    const newIndex = currentIndex > index ? currentIndex - 1 : currentIndex;
+    let shift = 0;
+    for (const idx of indicesToRemove) {
+      if (currentIndex > idx) {
+        shift++;
+      }
+    }
+
+    const newIndex = currentIndex - shift;
     const newKey = key.replace(
       new RegExp(`^${prefix}${currentIndex}`),
       `${prefix}${newIndex}`,
