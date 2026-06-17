@@ -209,11 +209,7 @@ export function useForm<
   const asyncTimersRef = useRef<Record<string, any>>({});
   const asyncVersionsRef = useRef<Record<string, number>>({});
 
-  let runAsyncValidation: (
-    name: string,
-    value: any,
-    prev?: any,
-  ) => void = () => {};
+  let runAsyncValidation: (name: string, value: any) => void = () => {};
   let runAllAsyncValidations: () => Promise<{
     success: boolean;
     errors: Record<string, string>;
@@ -405,12 +401,12 @@ export function useForm<
         channelBus.channel(`value:${name}` as any).emit(value);
 
         if (
-          !computedFieldsRef.current[name as string] &&
+          !computedFieldsRef.current[name] &&
           (validateOn === "change-submit" || validateOn === "change")
         ) {
           validateField(name, value);
           // Trigger debounced async validation with previous value reference
-          runAsyncValidation(name, value, previousValue);
+          runAsyncValidation(name, value);
         }
 
         const validator = fieldsValidationsRef.current.get(name);
@@ -424,7 +420,8 @@ export function useForm<
         notifySubscribers(name as any);
 
         // Update state if field is watched or we are in controlled mode (triggers re-render)
-        if (watchedFieldsRef.current.has(name) || mode === "controlled") {
+        if (watchedFieldsRef.current.has(name)) {
+          // || mode === "controlled"
           writeDraftDebounced("immediate");
           triggerRerender();
         } else {
@@ -1182,7 +1179,7 @@ export function useForm<
   // Async Validation Assignments
   // -----------------------------
   runAsyncValidation = useCallback(
-    (name: string, value: any, prevValue?: any) => {
+    (name: string, value: any) => {
       const config = (options?.asyncValidate as any)?.[name];
       if (!config) return;
 

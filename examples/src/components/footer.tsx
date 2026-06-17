@@ -1,9 +1,6 @@
-"use client";
-
-import React from "react";
 import { Package } from "lucide-react";
 
-export function LandingFooter() {
+export function Footer() {
   return (
     <footer className="w-full py-10 px-4 mt-auto border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -14,14 +11,13 @@ export function LandingFooter() {
               href="https://explita.ng"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-600"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-600"
             >
               Explita
             </a>
           </span>
         </div>
 
-        {/* Links */}
         <div className="flex items-center gap-6">
           <a
             href="https://github.com/explita/formly"

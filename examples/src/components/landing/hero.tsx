@@ -66,7 +66,7 @@ export function Hero() {
         <div className="pt-10 flex flex-wrap items-center justify-center gap-y-4 gap-x-8 text-xs font-semibold text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>&lt; 5KB Bundle Size (Gzipped)</span>
+            <span>~25KB Bundle Size (Gzipped)</span>
           </div>
           <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-250 dark:border-slate-800 pt-2 sm:pt-0 sm:pl-8">
             <span className="w-2 h-2 rounded-full bg-indigo-500" />

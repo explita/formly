@@ -1,15 +1,15 @@
 "use client";
 
-import { BasicFormExample } from "../../components/basic";
-import { CascadingFormExample } from "../../components/cascading";
-import { NestedArrayFormExample } from "../../components/nested-array";
-import { WizardFormExample } from "../../components/wizard";
-import { AsyncValidationExample } from "../../components/async-validation";
-import { CrossFieldCheckExample } from "../../components/check";
-import { DraftPersistenceExample } from "../../components/draft-persistence";
-import { NormalizeExample } from "../../components/normalize";
-import { ConditionalExample } from "../../components/conditional";
-import { ExternalAccessExample } from "../../components/external-access";
+import { BasicFormExample } from "../../../components/basic";
+import { CascadingFormExample } from "../../../components/cascading";
+import { NestedArrayFormExample } from "../../../components/nested-array";
+import { WizardFormExample } from "../../../components/wizard";
+import { AsyncValidationExample } from "../../../components/async-validation";
+import { CrossFieldCheckExample } from "../../../components/check";
+import { DraftPersistenceExample } from "../../../components/draft-persistence";
+import { NormalizeExample } from "../../../components/normalize";
+import { ConditionalExample } from "../../../components/conditional";
+import { ExternalAccessExample } from "../../../components/external-access";
 import { Sparkles, Terminal } from "lucide-react";
 
 export default function ExamplesPage() {

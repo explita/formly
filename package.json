@@ -22,7 +22,8 @@
   "homepage": "https://github.com/explita/formly#readme",
   "scripts": {
     "clean": "rimraf dist",
-    "build": "node scripts/gen-version.js && npm run clean && tsc && node scripts/copy-dist.js",
+    "copy-dist": "node scripts/copy-dist.js",
+    "build": "node scripts/gen-version.js && npm run clean && tsc && npm run copy-dist",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
