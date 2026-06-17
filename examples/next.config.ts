@@ -3,6 +3,8 @@ import path from "path";
 
 const withNextra = nextra({
   contentDirBasePath: "/docs",
+  defaultShowCopyCode: true,
+  codeHighlight: true,
 });
 
 const nextConfig = {

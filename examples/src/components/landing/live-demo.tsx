@@ -6,6 +6,7 @@ import { Form, useForm } from "@/dist";
 import { Input } from "../input";
 import { Label } from "../label";
 import { Check, Mail, User, Info, Activity } from "lucide-react";
+import { CopyButton } from "../copy-button";
 //@ts-ignore
 import DemoCode from "./demo-code.mdx";
 
@@ -13,6 +14,31 @@ const demoSchema = z.object({
   fullName: z.string().min(3, "Name must be at least 3 characters"),
   email: z.email("Enter a valid email address"),
 });
+
+const demoCodeString = `import { useForm, Form } from "@explita/formly";
+import { z } from "zod";
+
+const formSchema = z.object({
+  fullName: z.string().min(3, "Min 3 chars"),
+  email: z.string().email("Invalid email"),
+});
+
+export default function Demo() {
+  const form = useForm({
+    schema: formSchema,
+    defaultValues: { fullName: "", email: "" },
+    onSubmit: (values) => sendToAPI(values),
+  });
+
+  return (
+    <Form use={form}>
+      <form.Field name="fullName" render={(props) => (
+        <input {...props} />
+      )} />
+      {/* Targeted channel render update! */}
+    </Form>
+  );
+}`;
 
 export function LiveDemo() {
   const form = useForm({
@@ -55,9 +81,12 @@ export function LiveDemo() {
                 MyForm.tsx
               </span>
             </div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">
-              React TSX
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">
+                React TSX
+              </span>
+              <CopyButton text={demoCodeString} />
+            </div>
           </div>
 
           {/* Code content */}

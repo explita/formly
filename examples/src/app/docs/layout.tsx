@@ -3,6 +3,7 @@ import { Layout, Navbar } from "nextra-theme-docs";
 import { getPageMap } from "nextra/page-map";
 import "nextra-theme-docs/style.css";
 import { Footer } from "@/components/footer";
+import { Logo } from "@/components/logo";
 
 export default async function DocsLayout({
   children,
@@ -47,9 +48,12 @@ export default async function DocsLayout({
       navbar={
         <Navbar
           logo={
-            <span className="font-extrabold text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-cyan-500 text-lg select-none">
-              Formly Docs
-            </span>
+            <div className="flex flex-row items-center gap-2">
+              <Logo size={24} />
+              <span className="font-extrabold text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-cyan-500 text-lg select-none">
+                Formly Docs
+              </span>
+            </div>
           }
           projectLink="https://github.com/explita/formly"
         />
