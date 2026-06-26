@@ -268,6 +268,24 @@ export function useForm<
   const dirtyFieldsRef = useRef<Record<string, boolean>>({});
   const touchedFieldsRef = useRef<Record<string, boolean>>({});
 
+  const isDirty = useCallback((name?: string) => {
+    if (!name) return Object.values(dirtyFieldsRef.current).some(Boolean);
+    return !!dirtyFieldsRef.current[name];
+  }, []);
+
+  const isTouched = useCallback((name?: string) => {
+    if (!name) return Object.values(touchedFieldsRef.current).some(Boolean);
+    return !!touchedFieldsRef.current[name];
+  }, []);
+
+  const markTouched = useCallback((name: string) => {
+    touchedFieldsRef.current[name] = true;
+  }, []);
+
+  const markDirty = useCallback((name: string) => {
+    dirtyFieldsRef.current[name] = true;
+  }, []);
+
   const currentSchema = useRef<z.ZodObject<any> | undefined>(
     schema && isZodSchema(schema) ? schema : undefined,
   );
@@ -444,15 +462,47 @@ export function useForm<
       // Flatten incoming values for consistent key access
       const flattened = flattenFormValues(values);
 
+      // Reset computed fields to their empty/default types if overwriting
+      const computedValues: Record<string, any> = {};
+      if (options?.overwrite) {
+        Object.keys(computedFieldsRef.current).forEach((key) => {
+          const val = formValues.current[key];
+          if (Array.isArray(val)) {
+            computedValues[key] = [];
+          } else if (typeof val === "string" || val instanceof Date) {
+            computedValues[key] = "";
+          } else if (typeof val === "number") {
+            computedValues[key] = 0;
+          } else if (typeof val === "boolean") {
+            computedValues[key] = false;
+          } else if (typeof val === "object" && val !== null) {
+            computedValues[key] = {};
+          } else if (typeof val === "object" && val === null) {
+            computedValues[key] = null;
+          } else {
+            computedValues[key] = undefined;
+          }
+        });
+      }
+
+      const keysToNotify = options?.overwrite
+        ? new Set([
+            ...Object.keys(formValues.current),
+            ...Object.keys(flattened),
+            ...Object.keys(computedValues),
+          ])
+        : new Set(Object.keys(flattened));
+
       formValues.current = {
         ...(options?.overwrite ? {} : formValues.current),
         ...flattened,
+        ...computedValues,
       };
 
       channelBus.channel("value:*").emit(getValues());
 
       // 🔔 Notify all affected subscribers
-      Object.keys(flattened).forEach((key) => {
+      keysToNotify.forEach((key) => {
         channelBus.channel(`value:${key}` as any).emit(getValue(key));
         notifySubscribers(key as any);
       });
@@ -1096,12 +1146,27 @@ export function useForm<
     [unsubscribeField],
   );
 
+  //initialize form
+  // Intentionally depends only on defaultValues.
+  // Draft restoration & computed logic are internally guarded.
+  const { initialize } = useFormInitialization({
+    //@ts-ignore
+    defaultValues,
+    persistKey,
+    savedFormFirst,
+    generatePlaceholders,
+    //@ts-ignore
+    computed,
+    draftListeners,
+    onReady,
+    setValues,
+    createHandlerContext,
+    compute,
+    initialValuesRef,
+  });
+
   const reset = useCallback(
     (opts?: { ignoreDefaults?: boolean }) => {
-      Object.keys(fieldSubscribersRef.current).forEach((name) =>
-        fieldSubscribersRef.current[name]?.forEach((cb) => cb("")),
-      );
-
       Object.keys(fieldErrorSubscribersRef.current).forEach((name) =>
         fieldErrorSubscribersRef.current[name]?.forEach((fn) => fn(undefined)),
       );
@@ -1109,10 +1174,12 @@ export function useForm<
       dirtyFieldsRef.current = {};
       touchedFieldsRef.current = {};
 
-      formValues.current = flattenFormValues({
+      const resetValues = {
         ...generatePlaceholders,
         ...(opts?.ignoreDefaults ? {} : defaultValues),
-      });
+      };
+
+      setValues(resetValues, { overwrite: true }, true);
 
       setErrors({});
       formErrors.current = {};
@@ -1125,19 +1192,8 @@ export function useForm<
       // 🔔 Reset wizard step state back to step 1
       setCurrentStep(0);
 
-      // 🔔 Re-calculate all computed fields after reset
-      Object.entries(computedFieldsRef.current).forEach(([name, { fn }]) => {
-        void safeCompute(name, fn, undefined, { silent: true });
-      });
-
-      setValues(
-        {
-          ...generatePlaceholders,
-          ...(opts?.ignoreDefaults ? {} : defaultValues),
-        },
-        { overwrite: true },
-        true,
-      );
+      // 🔔 Re-calculate all computed fields after reset using the initialize helper
+      initialize(resetValues, { silent: false });
 
       triggerRerender();
     },
@@ -1148,6 +1204,8 @@ export function useForm<
       getValue,
       generatePlaceholders,
       triggerRerender,
+      setValues,
+      initialize,
     ],
   );
 
@@ -1155,24 +1213,6 @@ export function useForm<
     const combined = { ...generatePlaceholders, ...defaultValues };
     setValue(name, combined[name]);
     markTouched(name as string);
-  }, []);
-
-  const isDirty = useCallback((name?: string) => {
-    if (!name) return Object.values(dirtyFieldsRef.current).some(Boolean);
-    return !!dirtyFieldsRef.current[name];
-  }, []);
-
-  const isTouched = useCallback((name?: string) => {
-    if (!name) return Object.values(touchedFieldsRef.current).some(Boolean);
-    return !!touchedFieldsRef.current[name];
-  }, []);
-
-  const markTouched = useCallback((name: string) => {
-    touchedFieldsRef.current[name] = true;
-  }, []);
-
-  const markDirty = useCallback((name: string) => {
-    dirtyFieldsRef.current[name] = true;
   }, []);
 
   // -----------------------------
@@ -1309,7 +1349,7 @@ export function useForm<
           const data = structuredClone(validatedData);
           const raw =
             event?.currentTarget instanceof HTMLFormElement
-              ? new FormData(event.currentTarget)
+              ? event.currentTarget
               : new FormData();
 
           //@ts-ignore
@@ -1482,25 +1522,6 @@ export function useForm<
       unsubs.forEach((unsub) => unsub());
     };
   }, [getValues, getValue, subscribe, formMetadata]);
-
-  //initialize form
-  // Intentionally depends only on defaultValues.
-  // Draft restoration & computed logic are internally guarded.
-  useFormInitialization({
-    //@ts-ignore
-    defaultValues,
-    persistKey,
-    savedFormFirst,
-    generatePlaceholders,
-    //@ts-ignore
-    computed,
-    draftListeners,
-    onReady,
-    setValues,
-    createHandlerContext,
-    compute,
-    initialValuesRef,
-  });
 
   const [currentStep, setCurrentStep] = useState<number>(0);
   const totalSteps = options?.steps?.length ?? 0;
@@ -1775,6 +1796,13 @@ export function useForm<
     resetField,
     handleSubmit,
     onSubmit: onSubmit ? handleSubmit(onSubmit) : undefined,
+    submit: () => {
+      if (onSubmit) {
+        handleSubmit(onSubmit)();
+      } else {
+        validateAndSubmit();
+      }
+    },
     subscribe,
     unsubscribeField,
     subscribeFieldError,

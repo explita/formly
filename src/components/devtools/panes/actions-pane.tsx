@@ -37,9 +37,7 @@ export function ActionsPane({
   return (
     <div className="formly-devtools-pane">
       <div className="formly-devtools-section">
-        <span className="formly-devtools-section-title">
-          Form Actions
-        </span>
+        <span className="formly-devtools-section-title">Form Actions</span>
         <div className="formly-devtools-btn-group">
           <button
             className="formly-devtools-btn primary"
@@ -49,7 +47,15 @@ export function ActionsPane({
             }}
             disabled={!(form as any).schema}
           >
-            Trigger Validate
+            Validate
+          </button>
+          <button
+            className="formly-devtools-btn success"
+            onClick={() => {
+              form.submit();
+            }}
+          >
+            Submit
           </button>
           <button
             className="formly-devtools-btn secondary"
@@ -58,7 +64,7 @@ export function ActionsPane({
               onCommitValue();
             }}
           >
-            Reset Form
+            Reset
           </button>
         </div>
       </div>
@@ -92,17 +98,10 @@ export function ActionsPane({
       )}
 
       <div className="formly-devtools-section">
-        <span className="formly-devtools-section-title">
-          Set Field Value
-        </span>
-        <form
-          onSubmit={handleSetValue}
-          className="formly-devtools-setter-form"
-        >
+        <span className="formly-devtools-section-title">Set Field Value</span>
+        <form onSubmit={handleSetValue} className="formly-devtools-setter-form">
           <div className="formly-devtools-input-group">
-            <label className="formly-devtools-setter-label">
-              Field Path
-            </label>
+            <label className="formly-devtools-setter-label">Field Path</label>
             <input
               className="formly-devtools-setter-input"
               list="formly-paths"
@@ -130,10 +129,7 @@ export function ActionsPane({
             />
           </div>
 
-          <button
-            type="submit"
-            className="formly-devtools-btn primary block"
-          >
+          <button type="submit" className="formly-devtools-btn primary block">
             Commit Value change
           </button>
         </form>

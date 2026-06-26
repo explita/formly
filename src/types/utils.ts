@@ -278,6 +278,13 @@ export type FormInstance<
     ) => MaybePromise<void>,
   ) => (event: React.FormEvent<HTMLFormElement>) => MaybePromise<void>;
   /**
+   * Programmatically triggers form submission. Validates the form first if a schema is provided;
+   * if valid, calls the `onSubmit` handler configured in the form options.
+   *
+   * Useful for submitting the form from external buttons or programmatic logic.
+   */
+  submit: () => void;
+  /**
    * A utility function to register a form field.
    *
    * @param name - The name of the form field to register.
@@ -471,7 +478,10 @@ export type FormOptionsInternal<
         | number
         | boolean
       )[];
-      fn: (values: SchemaType<TSchema, TValues>, index: number) => TComputed[K];
+      fn: (
+        values: SchemaType<TSchema, TValues>,
+        index: number,
+      ) => MaybePromise<TComputed[K]>;
     };
   };
   /**
@@ -590,13 +600,13 @@ export type Compute<T> = <P extends Path<T>>(
   name: string,
   depsOrFn:
     | (Path<T> | (string & {}) | any)[]
-    | ((values: T, index: number) => any),
-  maybeFn?: (values: T, index: number) => any,
+    | ((values: T, index: number) => MaybePromise<any>),
+  maybeFn?: (values: T, index: number) => MaybePromise<any>,
 ) => void;
 
 export type ComputedField<T, R = unknown> = {
   deps?: (Path<T> | (string & {}) | any)[];
-  fn: (values: T, index: number) => R;
+  fn: (values: T, index: number) => MaybePromise<R>;
 };
 
 export type CascadeField<T, R = unknown> = {
@@ -636,19 +646,18 @@ export type UseFormInitializationProps = {
   persistKey?: string;
   savedFormFirst?: boolean;
   generatePlaceholders: Record<string, any>;
-
   computed?: Record<
     string,
     {
       deps?: string[];
-      fn: (values: any, index?: number) => any;
+      fn: (values: any, index?: number) => MaybePromise<any>;
     }
   >;
 
   compute: (
     key: string,
     deps: string[],
-    fn: (values: any, index?: number) => any,
+    fn: (values: any, index?: number) => MaybePromise<any>,
     index?: number,
     opts?: { silent?: boolean },
   ) => void;

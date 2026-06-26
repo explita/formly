@@ -124,4 +124,6 @@ export function useFormInitialization({
     // Run computed fields updates
     initialize(merged, { silent: true });
   }, [defaultValues, computed]);
+
+  return { initialize };
 }

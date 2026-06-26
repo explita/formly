@@ -83,7 +83,7 @@ export type ArrayHelpers<T> = {
    * Inserts a new value at the begining of the array.
    * @param value The value to insert into the array.
    */
-  insertFirst: (value: T) => ArrayHelpers<T>;
+  prepend: (value: T) => ArrayHelpers<T>;
   /**
    * Moves an item from one index to another.
    * @param from The index of the item to move.

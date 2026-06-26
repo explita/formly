@@ -83,6 +83,7 @@ The object returned by `useForm` exposes getters, methods, and components to int
 | `compute(name, deps, fn)`     | `(name: string, deps: any[], fn: (vals: T) => any) => void`              | Dynamically registers a computed field after initialization.                                  |
 | `watch(path)`                 | `(path: string) => any`                                                  | Subscribes to a field path, forcing React to re-render the calling component when it changes. |
 | `subscribe(path, callback)`   | `(path: string, cb: (val: any) => void) => () => void`                   | Subscribes to field changes without triggering full component re-renders.                     |
+| `submit()`                    | `() => void`                                                              | Programmatically triggers form submission — validates first if a schema is provided, then calls the configured `onSubmit` handler. Safe to call even when `onSubmit` is not defined. |
 | `transform(path, fn)`         | `(path: string, fn: (val: any) => any) => void`                          | Registers a dynamic transformer function for a field path.                                    |
 | `debug()`                     | `() => FormDebugInfo`                                                    | Returns a comprehensive state dump for debugging purposes.                                    |
 

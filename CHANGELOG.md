@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-06-26
+
+### Added
+
+- **`submit()` Method**: Added a proper `submit()` method to `FormInstance`. Previously it was `undefined` when no `onSubmit` option was provided, causing a runtime error on invocation. Now it is always a callable function — validates the form and, if an `onSubmit` handler is configured, proceeds to call it. Also added JSDoc and API reference documentation.
+
 ## [0.3.0] - 2026-06-16
 
 ### Added

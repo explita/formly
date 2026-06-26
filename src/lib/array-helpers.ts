@@ -50,13 +50,23 @@ export function formArrayHelper<T = any>(
       }
     });
 
-    // set new array keys
+    // Flatten each item back into dot-notation keys
     arr.forEach((v, i) => {
-      //@ts-ignore
-      newFlat[`${path}.${i}`] = v;
+      flattenValue(v, `${path}.${i}`, newFlat);
     });
 
-    setValues(newFlat, { overwrite: true });
+    // Convert flat keys → nested object (same pattern as removeArrayItem)
+    setValues(nestFormValues(newFlat), { overwrite: true });
+  }
+
+  function flattenValue(value: any, prefix: string, target: any) {
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      for (const key of Object.keys(value)) {
+        flattenValue(value[key], `${prefix}.${key}`, target);
+      }
+    } else {
+      target[prefix] = value;
+    }
   }
 
   function remove(index: number | number[]) {
@@ -144,6 +154,7 @@ export function formArrayHelper<T = any>(
       return api;
     },
     insert: (index, item) => {
+      working = [...get()];
       working.splice(index, 0, item);
       set(working);
 
@@ -152,7 +163,8 @@ export function formArrayHelper<T = any>(
       setKeys(currentKeys);
       return api;
     },
-    insertFirst: (item) => {
+    prepend: (item) => {
+      working = [...get()];
       working.unshift(item);
       set(working);
 
@@ -172,6 +184,7 @@ export function formArrayHelper<T = any>(
     },
 
     swap: (a, b) => {
+      working = [...get()];
       [working[a], working[b]] = [working[b], working[a]];
       set(working);
 
@@ -181,6 +194,7 @@ export function formArrayHelper<T = any>(
       return api;
     },
     move: (from, to) => {
+      working = [...get()];
       const [item] = working.splice(from, 1);
       working.splice(to, 0, item);
       set(working);

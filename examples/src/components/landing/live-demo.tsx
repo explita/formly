@@ -70,7 +70,7 @@ export function LiveDemo() {
       {/* Side-by-side Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         {/* Left Column: Simulated Code Editor */}
-        <div className="lg:col-span-6 flex flex-col bg-slate-950 rounded-2xl border border-slate-800 dark:border-slate-800 shadow-xl overflow-hidden h-[480px]">
+        <div className="lg:col-span-6 flex flex-col bg-slate-950 rounded-2xl border border-slate-800 dark:border-slate-800 shadow-xl overflow-hidden h-120">
           {/* Editor Tabs bar */}
           <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
             <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export function LiveDemo() {
 
         {/* Right Column: Live Interactive Demo */}
         <div className="lg:col-span-6 flex flex-col justify-between bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-linear-to-r from-purple-500 to-indigo-500" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-purple-500 to-indigo-500" />
 
           <div className="space-y-6">
             <div>

@@ -289,6 +289,13 @@ export function renderStyles() {
       .formly-devtools-btn.secondary:hover {
         background: #e11d48;
       }
+      .formly-devtools-btn.success {
+        background: #22c55e;
+        border-color: #16a34a;
+      }
+      .formly-devtools-btn.success:hover {
+        background: #16a34a;
+      }
       .formly-devtools-btn.block {
         width: 100%;
       }

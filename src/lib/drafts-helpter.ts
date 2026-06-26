@@ -60,9 +60,17 @@ export const writeDraft = debounce(writeDraftImmediate, 200);
  * If the draft key does not exist in local storage, the function will return
  * undefined.
  */
-export function readDraft(draftKey: string): unknown {
+export function readDraft<T extends unknown>(
+  draftKey: string,
+  defaultValue?: T,
+): T {
   const drafts = getDrafts();
-  return drafts[draftKey];
+
+  if (defaultValue !== undefined && drafts[draftKey] === undefined) {
+    return defaultValue;
+  }
+
+  return drafts[draftKey] as T;
 }
 
 /**
