@@ -164,29 +164,53 @@ export function nestFormValues<T extends any>(flat: T): T {
   return result;
 }
 
-export function mergeValues<T extends any>(defaultValues: T, saved: T): T {
-  const flattenDefaultValues = flattenFormValues(defaultValues);
-  const flattenSaved = flattenFormValues(saved);
-
-  const result: Record<string, any> = {};
-
-  // Get all unique keys from both objects
-  const allKeys = new Set([
-    ...Object.keys(flattenDefaultValues),
-    ...Object.keys(flattenSaved),
-  ]);
-
-  for (const key of allKeys) {
-    const savedValue = flattenSaved[key];
-    const defaultValue = flattenDefaultValues[key];
-
-    result[key] =
-      defaultValue !== undefined && defaultValue !== null && defaultValue !== ""
-        ? defaultValue
-        : (savedValue ?? defaultValue);
+/**
+ * Merges two value trees. The first argument (`primary`) wins unless its value
+ * is "empty" (undefined / null / ""), in which case the second argument
+ * (`secondary`) is used as a fallback.
+ *
+ * Arrays are treated as atomic — the primary side's array is used wholesale.
+ * This is important for draft restore: `flattenFormValues` encodes an empty
+ * array as `path: []` and a non-empty array as `path.0`, `path.1`, … (no
+ * `path` key). Merging those two encodings element-wise could otherwise produce
+ * a result containing both forms, letting the empty `path: []` marker clobber
+ * the saved entries (e.g. tags added to a draft wiped by the default's empty
+ * `tags: []`), or leaking fallback tail elements into a shorter primary array.
+ */
+export function mergeValues<T extends any>(primary: T, secondary: T): T {
+  if (primary === undefined || primary === null || primary === "") {
+    return (secondary ?? primary) as T;
   }
 
-  return result as T;
+  // Deep-merge plain objects (arrays and Dates are atomic).
+  if (
+    typeof primary === "object" &&
+    !Array.isArray(primary) &&
+    !(primary instanceof Date)
+  ) {
+    const secondaryObj =
+      typeof secondary === "object" &&
+      !Array.isArray(secondary) &&
+      !(secondary instanceof Date) &&
+      secondary !== null
+        ? (secondary as Record<string, any>)
+        : {};
+    const result: Record<string, any> = {};
+    const keys = new Set([
+      ...Object.keys(primary as Record<string, any>),
+      ...Object.keys(secondaryObj),
+    ]);
+    for (const key of keys) {
+      result[key] = mergeValues(
+        (primary as Record<string, any>)[key],
+        secondaryObj[key],
+      );
+    }
+    return result as T;
+  }
+
+  // Scalar (non-empty), array, or Date → primary wins wholesale.
+  return primary;
 }
 
 export function determineDirtyFields<T extends any>(
@@ -231,7 +255,12 @@ export function areFlatValuesEqual(a: any, b: any): boolean {
     return true;
   }
 
-  if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
+  if (
+    typeof a === "object" &&
+    a !== null &&
+    typeof b === "object" &&
+    b !== null
+  ) {
     const aKeys = Object.keys(a);
     const bKeys = Object.keys(b);
     if (aKeys.length !== bKeys.length) return false;
@@ -262,8 +291,14 @@ export function mergeInitialValues({
   const primary = savedFormFirst ? saved : defaults;
   const secondary = savedFormFirst ? defaults : saved;
 
-  return mergeValues(
-    mergeValues(primary || {}, secondary || {}),
-    generatePlaceholders,
+  // `mergeValues` deep-merges nested structures (arrays are atomic), so every
+  // input must be nested. `generatePlaceholders` arrives flattened
+  // (`flattenFormValues` output), so re-nest it first. The result is flattened
+  // back out to preserve the previous flat return contract.
+  return flattenFormValues(
+    mergeValues(
+      mergeValues(primary || {}, secondary || {}),
+      nestFormValues(generatePlaceholders || {}),
+    ),
   );
 }

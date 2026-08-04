@@ -168,7 +168,6 @@ export function useForm<
     onReady,
     autoFocusOnError = true,
     savedFormFirst = true,
-    id,
     preventUnload = false,
   } = options || {};
 
@@ -549,7 +548,9 @@ export function useForm<
           setFieldError(key, undefined);
         });
 
-      const mapped = isZodError(errors) ? mapZodErrors(errors) : errors;
+      const mapped = isZodError(errors)
+        ? mapZodErrors(errors)
+        : flattenFormValues(errors);
 
       Object.keys(formErrors.current).forEach((key) => {
         setFieldError(key, undefined);

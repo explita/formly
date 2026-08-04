@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-08-04
+
+### Fixed
+
+- **Draft restore race clobbering freshly-set values**: `useFormInitialization` re-applied
+  `setValues(merged, { overwrite: true })` from a stale draft whenever the "defaults unchanged"
+  check failed. That check used `shallowEqual`, which compares with `===` — always `false` for
+  empty arrays (`[] !== []`). Defaults containing empty arrays (e.g. `tags: []`, `tips: []`) kept
+  the reset branch armed, so a re-render could wipe a value set programmatically right before
+  submit (e.g. an uploaded image URL) with stale draft data. The effect now:
+  - Deep-compares defaults and computed configs via `areFlatValuesEqual` per key, so the reset
+    branch only runs when defaults genuinely change.
+  - Re-initializes from the **new defaults only** (never the previously saved draft) when defaults
+    do change, preventing stale-draft clobbering of in-flight edits.
+- **Array values lost during draft merge**: `mergeValues` flattened both sides and merged
+  key-by-key, but `flattenFormValues` encodes an empty array as `path: []` and a non-empty array
+  as `path.0`, `path.1`, … (no `path` key). Merging those two encodings produced a result with
+  both forms, and `nestFormValues` let the empty `path: []` marker clobber the saved entries —
+  so tags added to a draft (e.g. `selected.tags: []` as defaults) were wiped on refresh.
+  `mergeValues` now deep-merges and treats arrays as **atomic** (the winning side's array is used
+  wholesale), which also stops shorter draft arrays from leaking fallback tail elements. Empty
+  arrays remain set values, so `savedFormFirst` semantics are preserved in both directions.
+- **Unstable field callback identities causing stale re-emission**: `useField` returned a fresh
+  arrow function for every callback on each render. Consumers passing these as props (e.g.
+  `onValueChange` to an editor) received a new reference on every form re-render, re-firing their
+  effects — after `form.reset()` this re-emitted the previous editor content and re-wrote it back
+  to the persisted draft. The callbacks (`setValue`, `handleChange`, `handleBlur`, `reset`,
+  `validate`, `focus`) are now memoized with `useCallback`. They depend only on `name`: `useForm`
+  recreates the `form` object each render, but all of its methods are already stable
+  `useCallback` references, so closures over `name` remain correct and identities stay stable
+  across re-renders.
+
 ## [0.3.1] - 2026-06-26
 
 ### Added
