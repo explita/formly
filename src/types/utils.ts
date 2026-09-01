@@ -132,12 +132,14 @@ type ReadyContext<T> = {
 
 export type FormMeta = {
   get<T = unknown>(key: string): T | undefined;
-  set: (key: string, value: unknown, options?: { silent?: boolean }) => void;
+  set: <T = unknown>(key: string, value: T) => void;
   delete: (key: string) => void;
   has: (key: string) => boolean;
-  keys: () => MapIterator<string>;
-  values: () => MapIterator<unknown>;
+  keys: () => string[];
+  values: <T = unknown>() => T[];
   clear: () => void;
+  entries: () => Record<string, unknown>;
+  raw: () => Record<string, unknown>;
 };
 
 export type InferCascade<TCascade> = TCascade;
@@ -529,6 +531,7 @@ export type FormOptionsInternal<
    * Whether to focus the first field with an error on submit.
    */
   autoFocusOnError?: boolean;
+  autoClearError?: boolean;
   /**
    * Whether to use the saved form state first.
    */

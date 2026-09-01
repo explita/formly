@@ -45,7 +45,6 @@ import { Field } from "../components/field.js";
 import { createFormBus } from "../lib/pub-sub.js";
 import { registry } from "../lib/form-registry.js";
 import { useFormInitialization } from "./use-form-initialization.js";
-import { createMetaContext } from "../lib/meta-context.js";
 
 /**
  * A highly performant, custom React hook designed to orchestrate state, validation,
@@ -167,6 +166,7 @@ export function useForm<
     onSubmit,
     onReady,
     autoFocusOnError = true,
+    autoClearError = true,
     savedFormFirst = true,
     preventUnload = false,
   } = options || {};
@@ -250,8 +250,6 @@ export function useForm<
   const fieldsValidationsRef = useRef<Map<string, (val: any) => any>>(
     new Map(),
   );
-
-  const metaRef = useRef<Map<string, unknown>>(new Map());
 
   const fieldErrorSubscribersRef = useRef<
     Record<string, Set<(err: string | undefined) => void>>
@@ -1316,6 +1314,50 @@ export function useForm<
     return nestFormValues(changes);
   }, []);
 
+  // Pure React state — no metaRef at all
+  const [meta, setMeta] = useState<Record<string, unknown>>({});
+
+  const formMetadata = useMemo(
+    () => ({
+      get<T = unknown>(key: string): T | undefined {
+        return meta[key] as T | undefined;
+      },
+      set(key: string, value: unknown, opts?: { silent?: boolean }) {
+        if (opts?.silent) {
+          // In pure state, silent updates aren't possible without mutating
+          // but you can just do a normal update
+        }
+        setMeta((prev) => ({ ...prev, [key]: value }));
+      },
+      delete(key: string) {
+        setMeta((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      },
+      has(key: string): boolean {
+        return key in meta;
+      },
+      keys(): string[] {
+        return Object.keys(meta);
+      },
+      values<T = unknown>(): T[] {
+        return Object.values(meta) as T[];
+      },
+      clear() {
+        setMeta({});
+      },
+      entries(): Record<string, unknown> {
+        return meta;
+      },
+      raw(): Record<string, unknown> {
+        return meta;
+      },
+    }),
+    [meta],
+  );
+
   function createHandlerContext(data: Record<string, any>) {
     return {
       setValues,
@@ -1342,6 +1384,10 @@ export function useForm<
         if (event) event.preventDefault();
 
         try {
+          if (autoClearError) {
+            setErrors({});
+            setIsValidated(false);
+          }
           const validatedData = await validateAndSubmit();
           if (!validatedData) return;
 
@@ -1436,7 +1482,7 @@ export function useForm<
     if (cascades) {
       Object.keys(cascades).forEach((key) => {
         cascadeState[key] = {
-          data: metaRef.current.get(`${key}.options`) ?? [],
+          data: meta[`${key}.options`] ?? [],
           isLoading: !!loadingCascades[key],
         };
       });
@@ -1448,7 +1494,7 @@ export function useForm<
       dirty: { ...nestFormValues(dirtyFieldsRef.current) },
       touched: { ...nestFormValues(touchedFieldsRef.current) },
       computed: { ...computedFieldsRef.current },
-      meta: Object.fromEntries(metaRef.current.entries()),
+      meta: { ...meta },
       cascade: cascadeState,
       subscriptions: {
         fields: { ...fieldSubscribersRef.current },
@@ -1460,11 +1506,6 @@ export function useForm<
       },
     };
   }, [loadingCascades]);
-
-  const formMetadata = useMemo(
-    () => createMetaContext(metaRef, triggerRerender),
-    [triggerRerender],
-  );
 
   // -----------------------------
   // Cascading Option Binding Subscription
@@ -1863,7 +1904,7 @@ export function useForm<
       if (cascades) {
         Object.keys(cascades).forEach((key) => {
           res[key] = {
-            data: metaRef.current.get(`${key}.options`) ?? [],
+            data: meta[`${key}.options`] ?? [],
             isLoading: !!loadingCascades[key],
           };
         });

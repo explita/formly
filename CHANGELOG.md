@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-09-01
+
+### Added
+
+- **`autoClearError` option**: Added `autoClearError` configuration option to `useForm` (defaults to `true`). When enabled, existing field errors are cleared and `isValidated` is reset to `false` at the start of each submit attempt before running `validateAndSubmit()`.
+- **`entries()` and `raw()` methods on `FormMeta`**: Expose the full metadata state dictionary as a `Record<string, unknown>`.
+
+### Changed
+
+- **Reactive Form Metadata**: Converted `meta` storage in `useForm` to pure React state (`useState`), ensuring components and cascading fields that read `meta` re-render reactively and consistently when metadata is set, deleted, or cleared.
+- **`FormMeta.keys()` and `FormMeta.values()` return types**: Now return standard arrays (`string[]` and `T[]`) instead of `MapIterator` for simpler iteration and serializability.
+
 ## [0.3.2] - 2026-08-04
 
 ### Fixed
