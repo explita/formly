@@ -3,6 +3,7 @@ import { FieldError, Label } from "./index.js";
 import { useField } from "../hooks/use-field.js";
 import type { FieldContextType, FieldProps } from "../types/utils.js";
 import type { Path } from "../types/path.js";
+import { Description } from "./description.js";
 
 const FieldContext = createContext<FieldContextType | null>(null);
 
@@ -27,6 +28,7 @@ export function Field<T extends Record<string, any>, P extends Path<T>>({
   name,
   id,
   label,
+  description,
   as,
   required,
   hideError = false,
@@ -62,6 +64,7 @@ export function Field<T extends Record<string, any>, P extends Path<T>>({
     message: error,
     required,
     hasError,
+    description,
   };
 
   const meta = {
@@ -76,17 +79,20 @@ export function Field<T extends Record<string, any>, P extends Path<T>>({
   if (isBoolean) {
     return (
       <FieldContext value={fieldContextValue}>
-        {renderFn(
-          {
-            ...bind,
-            //@ts-ignore
-            checked: !!value,
-            onCheckedChange: (val: boolean) => {
-              setValue(val as any);
+        <div>
+          {renderFn(
+            {
+              ...bind,
+              //@ts-ignore
+              checked: !!value,
+              onCheckedChange: (val: boolean) => {
+                setValue(val as any);
+              },
             },
-          },
-          meta,
-        )}
+            meta,
+          )}
+          <Description />
+        </div>
       </FieldContext>
     );
   }
@@ -100,18 +106,21 @@ export function Field<T extends Record<string, any>, P extends Path<T>>({
           className={className}
         >
           <Label />
-          {renderFn(
-            {
-              ...bind,
-              //@ts-ignore
-              onValueChange: (val: string) => {
-                setValue(val as any);
+          <div>
+            {renderFn(
+              {
+                ...bind,
+                //@ts-ignore
+                onValueChange: (val: string) => {
+                  setValue(val as any);
+                },
+                "data-input-error": hasError,
               },
-              "data-input-error": hasError,
-            },
-            meta,
-          )}
-          {hasError && <FieldError />}
+              meta,
+            )}
+            <Description />
+            <FieldError />
+          </div>
         </div>
       </FieldContext>
     );
@@ -125,14 +134,17 @@ export function Field<T extends Record<string, any>, P extends Path<T>>({
         className={className}
       >
         <Label />
-        {renderFn(
-          {
-            ...bind,
-            "data-input-error": hasError,
-          },
-          meta,
-        )}
-        {hasError && <FieldError />}
+        <div>
+          {renderFn(
+            {
+              ...bind,
+              "data-input-error": hasError,
+            },
+            meta,
+          )}
+          <Description />
+          <FieldError />
+        </div>
       </div>
     </FieldContext>
   );

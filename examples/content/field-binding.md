@@ -62,6 +62,31 @@ return (
 );
 ```
 
+### Helper Text & Description (`description` / `<Description />`)
+
+You can provide contextual guidance or helper text for any field using the `description` prop on `<Field />`:
+
+```tsx
+<Field
+  name="username"
+  label="Account Username"
+  description="Must be between 3 and 20 alphanumeric characters."
+  placeholder="Enter username"
+  required
+  render={(props) => <input {...props} />}
+/>
+```
+
+The `<Field />` component automatically renders the built-in `<Description />` element underneath the input, styled with accessible, theme-aware muted typography (`.form-description`).
+
+You can also import and use `<Description />` standalone:
+
+```tsx
+import { Description } from "@explita/formly";
+
+<Description>Custom helper text outside of the standard layout</Description>
+```
+
 ---
 
 ## The `useField` Hook

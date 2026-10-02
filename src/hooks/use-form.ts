@@ -79,7 +79,7 @@ import { useFormInitialization } from "./use-form-initialization.js";
  *   asyncValidate: {
  *     username: {
  *       debounce: 1000,
- *       validate: async (value) => {
+ *       fn: async (value) => {
  *         const isUnique = await api.checkUsername(value);
  *         return isUnique ? null : "Username is already taken";
  *       },
@@ -1276,6 +1276,8 @@ export function useForm<
           const error = await config.fn(value, getValues());
           if (error) {
             errors[name] = error;
+          } else {
+            delete errors[name];
           }
         } catch (err) {
           errors[name] = "Validation failed";
@@ -1510,6 +1512,7 @@ export function useForm<
   // -----------------------------
   // Cascading Option Binding Subscription
   // -----------------------------
+  const lastWatchedValuesRef = useRef<Record<string, any[]>>({});
   useEffect(() => {
     const cascades = cascadeRef.current;
     if (!cascades) return;
@@ -1520,12 +1523,17 @@ export function useForm<
       const triggerCascade = async () => {
         const latestConfig = (cascadeRef.current as any)?.[fieldName];
         if (!latestConfig) return;
-
         const currentValues = getValues();
-        const watchedValues = latestConfig.watch.map((p: string) =>
-          getValue(p),
-        );
-
+        const watchedValues: string[] = Array.isArray(latestConfig.watch)
+          ? latestConfig.watch.map((p: string) => getValue(p))
+          : [];
+        // 1. Skip if watched values haven't changed
+        const prev = lastWatchedValuesRef.current[fieldName];
+        const hasChanged =
+          !prev || watchedValues.some((val, i) => val !== prev[i]);
+        if (!hasChanged) return;
+        // 2. Save current watched values
+        lastWatchedValuesRef.current[fieldName] = watchedValues;
         setLoadingCascades((prev) => ({ ...prev, [fieldName]: true }));
         try {
           const resolved = await latestConfig.fn(currentValues, watchedValues);
@@ -1545,25 +1553,27 @@ export function useForm<
         }
       };
 
-      const initialConfig = (cascades as any)[fieldName];
+      const initialConfig = cascades[fieldName];
       if (initialConfig) {
         // Subscribe to each watched field
-        initialConfig.watch.forEach((watchField: string) => {
-          const unsub = subscribe(watchField, () => {
-            void triggerCascade();
+        if (Array.isArray(initialConfig.watch)) {
+          initialConfig.watch.forEach((watchField: string) => {
+            const unsub = subscribe(watchField, () => {
+              void triggerCascade();
+            });
+            unsubs.push(unsub);
           });
-          unsubs.push(unsub);
-        });
-
-        // Run initial load on mount
-        void triggerCascade();
+        } else {
+          // Run initial load on mount if no dependencies
+          void triggerCascade();
+        }
       }
     });
 
     return () => {
       unsubs.forEach((unsub) => unsub());
     };
-  }, [getValues, getValue, subscribe, formMetadata]);
+  }, [getValues, getValue, subscribe]);
 
   const [currentStep, setCurrentStep] = useState<number>(0);
   const totalSteps = options?.steps?.length ?? 0;

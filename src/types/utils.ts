@@ -83,6 +83,7 @@ export type FieldProps<T, P extends Path<T> = Path<T>> = {
   id?: string;
   name: P;
   label?: string | ReactElement;
+  description?: string | ReactElement;
   as?: "checkbox" | "select" | "date";
   required?: boolean;
   hideError?: boolean;
@@ -107,6 +108,7 @@ export type FieldProps<T, P extends Path<T> = Path<T>> = {
 export type FieldContextType = {
   name?: string;
   label?: string | ReactElement;
+  description?: string | ReactElement;
   id?: string;
   message?: string;
   required?: boolean;

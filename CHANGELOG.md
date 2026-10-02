@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-10-02
+
+### Added
+
+- **`<Description />` Component**: Standalone and field-integrated helper text component exported from `@explita/formly`. Automatically binds to field context or accepts custom `children`, supporting custom element tags via `as` (defaults to `<p>`).
+- **`description` prop on `<Field />`**: Declaratively attach helper text to any input, automatically rendered via `<Description />` with proper `data-slot="description"` attributes.
+
+### Changed
+
+- **Softer Design System Palette**: Updated `.form-label` to use a softer `#334155` (slate-700) in light mode and `#cbd5e1` (slate-300) in dark mode, eliminating overly sharp high-contrast black text while maintaining WCAG accessibility.
+- **Form Description Typography & Styling**: Added native CSS styles for `.form-description` with muted slate colors, balanced font sizing (`0.7125rem`), and disabled state opacity.
+- **Field Layout Structure**: Wrapped the rendered input, `<Description />`, and `<FieldError />` inside an inner container for cleaner vertical rhythm and layout control.
+
+### Fixed
+
+- **Cascading Dropdowns Re-Execution Loop**: Resolved infinite and redundant cascade loading cycles by adding shallow equality diffing on watched dependency values (`lastWatchedValuesRef`) and removing the unstable `formMetadata` reference from the subscription effect dependency array.
+- **Async Validation Error Cleanup**: Properly cleared resolved field errors (`delete errors[name]`) during async validation runs when the field passes validation.
+- **Injected CSS Syntax**: Fixed non-standard JS-style `//` comments in the injected stylesheet to standard CSS comments to prevent CSS parser anomalies.
+
 ## [0.3.3] - 2026-09-01
 
 ### Added
